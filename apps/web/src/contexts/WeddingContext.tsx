@@ -1,0 +1,44 @@
+"use client"
+
+import { createContext, useContext, type ReactNode } from "react"
+
+export interface WeddingContextType {
+  wedding: {
+    id: string
+    slug: string
+    partnerOneName: string
+    partnerTwoName: string
+    weddingDate: Date | null
+    weddingTime: string | null
+    weddingLocation: string | null
+    city: string | null
+    state: string | null
+    totalBudget: string | null
+    coverPhotoUrl: string | null
+    websiteEnabled: boolean
+    websiteTheme: string
+    story: string | null
+  } | null
+  memberRole: string | null
+}
+
+const WeddingContext = createContext<WeddingContextType>({
+  wedding: null,
+  memberRole: null,
+})
+
+export function WeddingProvider({
+  children,
+  value,
+}: {
+  children: ReactNode
+  value: WeddingContextType
+}) {
+  return (
+    <WeddingContext.Provider value={value}>{children}</WeddingContext.Provider>
+  )
+}
+
+export function useWedding() {
+  return useContext(WeddingContext)
+}

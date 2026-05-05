@@ -1,0 +1,35 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# build outputs
+.next
+dist
+build
+out
+
+# env files
+.env
+.env.local
+.env.*.local
+
+# database
+*.db
+*.db-journal
+*.sqlite
+
+# uploads
+apps/web/public/uploads/*
+!apps/web/public/uploads/.gitkeep
+
+# misc
+.DS_Store
+*.pem
+.turbo
+coverage
+.vercel
+
+# expo
+apps/mobile/.expo
+apps/mobile/android
+apps/mobile/ios
