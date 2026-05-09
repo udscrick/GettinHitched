@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Heart, ArrowRight, Loader2, Sparkles } from "lucide-react"
 import { toast } from "sonner"
 
-const STEPS = ["Welcome", "Your Names", "Wedding Details", "Budget"]
+const STEPS = ["Welcome", "Your Names", "Wedding Details", "Complete"]
 
 export default function OnboardingPage() {
   const router = useRouter()
@@ -24,7 +24,6 @@ export default function OnboardingPage() {
     weddingDate: "",
     city: "",
     state: "",
-    totalBudget: "",
   })
 
   function update(field: string, value: string) {
@@ -40,7 +39,6 @@ export default function OnboardingPage() {
         weddingDate: form.weddingDate || undefined,
         city: form.city || undefined,
         state: form.state || undefined,
-        totalBudget: form.totalBudget || undefined,
       })
 
       if (result.error) {
@@ -191,25 +189,10 @@ export default function OnboardingPage() {
           )}
 
           {step === 3 && (
-            <div>
-              <h2 className="font-serif text-2xl font-bold mb-2">Budget</h2>
-              <p className="text-muted-foreground mb-6">Set your overall wedding budget (optional)</p>
-              <div>
-                <Label>Total Budget</Label>
-                <div className="relative mt-1">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                  <Input
-                    type="number"
-                    placeholder="e.g. 30000"
-                    value={form.totalBudget}
-                    onChange={(e) => update("totalBudget", e.target.value)}
-                    className="pl-7"
-                  />
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  You can set budgets per category in the Budget section
-                </p>
-              </div>
+            <div className="text-center">
+              <Sparkles className="h-12 w-12 text-champagne-gold mx-auto mb-4" />
+              <h2 className="font-serif text-2xl font-bold mb-2">All Set!</h2>
+              <p className="text-muted-foreground mb-6">You&apos;re ready to start planning your perfect wedding.</p>
               <div className="flex gap-3 mt-6">
                 <Button variant="outline" onClick={() => setStep(2)} className="flex-1">Back</Button>
                 <Button variant="gold" className="flex-1" onClick={finish} disabled={loading}>

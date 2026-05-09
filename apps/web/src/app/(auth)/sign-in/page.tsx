@@ -34,13 +34,14 @@ export default function SignInPage() {
         password: data.password,
         redirect: false,
       })
-
-      if (result?.ok) {
-        router.push("/dashboard")
-        router.refresh()
-      } else {
+      if (result?.error) {
         toast.error("Invalid email or password")
+        return
       }
+      router.push("/dashboard")
+      router.refresh()
+    } catch {
+      toast.error("Invalid email or password")
     } finally {
       setLoading(false)
     }

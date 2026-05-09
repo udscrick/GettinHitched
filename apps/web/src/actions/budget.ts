@@ -5,14 +5,18 @@ import { db } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 import { expenseSchema, categorySchema } from "@/lib/validations/budget"
 
-async function getWeddingAccess(weddingId: string) {
+async function getEventAccess(eventId: string) {
   const session = await auth()
   if (!session?.user?.id) return null
-  return db.weddingMember.findFirst({ where: { weddingId, userId: session.user.id } })
+  const event = await db.event.findUnique({ where: { id: eventId } })
+  if (!event) return null
+  return db.weddingMember.findFirst({
+    where: { weddingId: event.weddingId, userId: session.user.id },
+  })
 }
 
-export async function createExpense(weddingId: string, data: unknown) {
-  const member = await getWeddingAccess(weddingId)
+export async function createExpense(eventId: string, data: unknown) {
+  const member = await getEventAccess(eventId)
   if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
 
   const parsed = expenseSchema.safeParse(data)
@@ -21,7 +25,7 @@ export async function createExpense(weddingId: string, data: unknown) {
   const d = parsed.data
   const expense = await db.expense.create({
     data: {
-      weddingId,
+      eventId,
       title: d.title,
       description: d.description,
       categoryId: d.categoryId,
@@ -37,12 +41,12 @@ export async function createExpense(weddingId: string, data: unknown) {
     include: { category: true, vendor: true },
   })
 
-  revalidatePath("/budget")
+  revalidatePath(`/events/${eventId}/budget`)
   return { success: true, expense }
 }
 
-export async function updateExpense(expenseId: string, weddingId: string, data: unknown) {
-  const member = await getWeddingAccess(weddingId)
+export async function updateExpense(expenseId: string, eventId: string, data: unknown) {
+  const member = await getEventAccess(eventId)
   if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
 
   const parsed = expenseSchema.partial().safeParse(data)
@@ -58,36 +62,36 @@ export async function updateExpense(expenseId: string, weddingId: string, data: 
     },
   })
 
-  revalidatePath("/budget")
+  revalidatePath(`/events/${eventId}/budget`)
   return { success: true, expense }
 }
 
-export async function deleteExpense(expenseId: string, weddingId: string) {
-  const member = await getWeddingAccess(weddingId)
+export async function deleteExpense(expenseId: string, eventId: string) {
+  const member = await getEventAccess(eventId)
   if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
 
   await db.expense.delete({ where: { id: expenseId } })
-  revalidatePath("/budget")
+  revalidatePath(`/events/${eventId}/budget`)
   return { success: true }
 }
 
-export async function createCategory(weddingId: string, data: unknown) {
-  const member = await getWeddingAccess(weddingId)
+export async function createCategory(eventId: string, data: unknown) {
+  const member = await getEventAccess(eventId)
   if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
 
   const parsed = categorySchema.safeParse(data)
   if (!parsed.success) return { error: parsed.error.errors[0].message }
 
   const category = await db.expenseCategory.create({
-    data: { weddingId, ...parsed.data },
+    data: { eventId, ...parsed.data },
   })
 
-  revalidatePath("/budget")
+  revalidatePath(`/events/${eventId}/budget`)
   return { success: true, category }
 }
 
-export async function updateCategory(categoryId: string, weddingId: string, data: unknown) {
-  const member = await getWeddingAccess(weddingId)
+export async function updateCategory(categoryId: string, eventId: string, data: unknown) {
+  const member = await getEventAccess(eventId)
   if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
 
   const parsed = categorySchema.partial().safeParse(data)
@@ -97,6 +101,15 @@ export async function updateCategory(categoryId: string, weddingId: string, data
     where: { id: categoryId },
     data: parsed.data,
   })
-  revalidatePath("/budget")
+  revalidatePath(`/events/${eventId}/budget`)
   return { success: true, category }
+}
+
+export async function deleteCategory(categoryId: string, eventId: string) {
+  const member = await getEventAccess(eventId)
+  if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
+
+  await db.expenseCategory.delete({ where: { id: categoryId } })
+  revalidatePath(`/events/${eventId}/budget`)
+  return { success: true }
 }

@@ -9,11 +9,8 @@ export interface WeddingContextType {
     partnerOneName: string
     partnerTwoName: string
     weddingDate: Date | null
-    weddingTime: string | null
-    weddingLocation: string | null
     city: string | null
     state: string | null
-    totalBudget: string | null
     coverPhotoUrl: string | null
     websiteEnabled: boolean
     websiteTheme: string

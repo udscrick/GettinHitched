@@ -31,12 +31,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "File too large (max 10MB)" }, { status: 400 })
     }
 
-    // Get wedding for this album
+    // Get event/wedding for this album
     let weddingId = ""
     if (albumId) {
-      const album = await db.album.findUnique({ where: { id: albumId } })
+      const album = await db.album.findUnique({
+        where: { id: albumId },
+        include: { event: { select: { weddingId: true } } },
+      })
       if (!album) return NextResponse.json({ error: "Album not found" }, { status: 404 })
-      weddingId = album.weddingId
+      weddingId = album.event.weddingId
     }
 
     // Verify access

@@ -123,10 +123,21 @@ async function main() {
 }
 
 export async function seedWedding(weddingId: string) {
+  // Create a default event to attach per-event data
+  const event = await prisma.event.create({
+    data: {
+      weddingId,
+      name: "Wedding Ceremony & Reception",
+      type: "WEDDING_CEREMONY",
+      sortOrder: 0,
+    },
+  })
+  const eventId = event.id
+
   // Create default expense categories
   for (const cat of DEFAULT_CATEGORIES) {
     await prisma.expenseCategory.create({
-      data: { weddingId, ...cat },
+      data: { eventId, ...cat },
     })
   }
 
@@ -135,12 +146,10 @@ export async function seedWedding(weddingId: string) {
     const task = DEFAULT_TASKS[i]
     await prisma.task.create({
       data: {
-        weddingId,
+        eventId,
         title: task.title,
         category: task.category,
-        monthsBefore: task.monthsBefore,
         priority: task.priority,
-        isTemplate: true,
         sortOrder: i,
       },
     })
@@ -173,12 +182,6 @@ export async function seedWedding(weddingId: string) {
   // Create default honeymoon plan
   await prisma.honeymoonPlan.create({ data: { weddingId } })
 
-  // Create default ceremony detail
-  await prisma.ceremonyDetail.create({ data: { weddingId } })
-
-  // Create default reception detail
-  await prisma.receptionDetail.create({ data: { weddingId } })
-
   // Create default engagement detail
   await prisma.engagementDetail.create({ data: { weddingId } })
 
@@ -193,7 +196,7 @@ export async function seedWedding(weddingId: string) {
     { name: "Hair & Makeup Inspiration", category: "INSPIRATION_HAIR", sortOrder: 6 },
   ]
   for (const album of albums) {
-    await prisma.album.create({ data: { weddingId, ...album } })
+    await prisma.album.create({ data: { eventId, ...album } })
   }
 }
 

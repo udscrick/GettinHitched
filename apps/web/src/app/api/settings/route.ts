@@ -29,7 +29,8 @@ export async function GET() {
     return NextResponse.json({
       wedding: weddingMember.wedding,
       weddingId: weddingMember.weddingId,
-      role: weddingMember.role,
+      currentUserId: session.user.id,
+      currentRole: weddingMember.role,
       members,
     })
   } catch {

@@ -9,30 +9,37 @@ export default async function InvitationsPage() {
 
   const weddingMember = await db.weddingMember.findFirst({
     where: { userId: session.user.id },
-    include: {
-      wedding: {
-        include: {
-          invitationBatches: {
-            include: {
-              invitations: {
-                include: {
-                  guest: { select: { id: true, firstName: true, lastName: true, email: true } },
-                },
-              },
-            },
-            orderBy: { createdAt: "desc" },
-          },
-          guests: {
-            select: { id: true, firstName: true, lastName: true, email: true },
-            orderBy: { firstName: "asc" },
-          },
-        },
-      },
-    },
   })
 
   if (!weddingMember) redirect("/onboarding")
-  const { wedding, role } = weddingMember
+
+  // Invitations are now per-event — aggregate across all events
+  const events = await db.event.findMany({
+    where: { weddingId: weddingMember.weddingId },
+    include: {
+      invitationBatches: {
+        include: {
+          invitations: {
+            include: {
+              guest: { select: { id: true, firstName: true, lastName: true, email: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
+      },
+      guests: {
+        select: { id: true, firstName: true, lastName: true, email: true },
+        orderBy: { firstName: "asc" },
+      },
+    },
+    orderBy: { sortOrder: "asc" },
+  })
+
+  const allBatches = events.flatMap(e =>
+    e.invitationBatches.map(b => ({ ...b, eventName: e.name }))
+  )
+  const allGuests = events.flatMap(e => e.guests)
+    .filter((g, i, arr) => arr.findIndex(x => x.id === g.id) === i)
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -43,10 +50,10 @@ export default async function InvitationsPage() {
         </p>
       </div>
       <InvitationsClient
-        weddingId={wedding.id}
-        batches={wedding.invitationBatches}
-        allGuests={wedding.guests}
-        role={role}
+        weddingId={weddingMember.weddingId}
+        batches={allBatches}
+        allGuests={allGuests}
+        role={weddingMember.role}
       />
     </div>
   )

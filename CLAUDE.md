@@ -4,6 +4,18 @@
 
 ---
 
+## ⚠️ TOP PRIORITY: Mobile-Web Feature Parity
+
+**Every feature built for the web app MUST have a corresponding implementation in the mobile app, and vice versa. This is the single highest priority rule in this codebase.**
+
+- Any new page, action, or data model added to the web app must be mirrored in the mobile app at the same time.
+- Any change to a server action, API route, or Prisma model must be reflected in both the web UI and mobile UI.
+- Mobile screens consume the same Next.js API routes (`/api/*`) as the web app — never duplicate business logic.
+- Do not consider any feature "done" until it works on both platforms.
+- When in doubt about scope, ask: "Does this change need a mobile counterpart?" The answer is almost always yes.
+
+---
+
 ## Project Overview
 
 **GettinHitched** is a full-stack wedding planning platform with a Next.js web app and an Expo React Native mobile app, living in a pnpm monorepo managed by Turborepo.

@@ -76,20 +76,14 @@ interface Vendor {
   type: string
 }
 
-interface Wedding {
-  totalBudget: string | null
-}
-
 export function BudgetClient({
-  weddingId,
-  wedding,
+  eventId,
   categories,
   expenses,
   vendors,
   role,
 }: {
-  weddingId: string
-  wedding: Wedding
+  eventId: string
   categories: Category[]
   expenses: Expense[]
   vendors: Vendor[]
@@ -113,12 +107,12 @@ export function BudgetClient({
     setSaving(true)
     try {
       if (editExpense) {
-        const result = await updateExpense(editExpense.id, weddingId, data)
+        const result = await updateExpense(editExpense.id, eventId, data)
         if (result.error) { toast.error(result.error); return }
         toast.success("Expense updated")
         setEditExpense(null)
       } else {
-        const result = await createExpense(weddingId, data)
+        const result = await createExpense(eventId, data)
         if (result.error) { toast.error(result.error); return }
         toast.success("Expense added")
         setAddOpen(false)
@@ -132,7 +126,7 @@ export function BudgetClient({
 
   async function handleDelete(id: string) {
     if (!confirm("Delete this expense?")) return
-    const result = await deleteExpense(id, weddingId)
+    const result = await deleteExpense(id, eventId)
     if (result.error) { toast.error(result.error); return }
     toast.success("Expense deleted")
     router.refresh()

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -12,9 +12,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { signUpSchema, type SignUpInput } from "@/lib/validations/auth"
 import { Loader2 } from "lucide-react"
+import { Suspense } from "react"
 
-export default function SignUpPage() {
+function SignUpForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/onboarding"
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
@@ -34,24 +37,24 @@ export default function SignUpPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       })
-      const result = await res.json()
+      const regData = await res.json()
 
-      if (!res.ok || result.error) {
-        toast.error(result.error ?? "Registration failed")
+      if (!res.ok || regData.error) {
+        toast.error(regData.error ?? "Registration failed")
         return
       }
 
-      const signInResult = await signIn("credentials", {
+      const result = await signIn("credentials", {
         email: data.email,
         password: data.password,
         redirect: false,
       })
-
-      if (signInResult?.ok) {
-        router.push("/onboarding")
-      } else {
-        toast.error("Account created but sign in failed. Please sign in manually.")
+      if (result?.error) {
+        toast.error("Account created! Please sign in.")
         router.push("/sign-in")
+      } else {
+        router.push(callbackUrl)
+        router.refresh()
       }
     } finally {
       setLoading(false)
@@ -60,7 +63,7 @@ export default function SignUpPage() {
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true)
-    await signIn("google", { callbackUrl: "/onboarding" })
+    await signIn("google", { callbackUrl })
   }
 
   return (
@@ -150,5 +153,13 @@ export default function SignUpPage() {
         </Link>
       </p>
     </div>
+  )
+}
+
+export default function SignUpPage() {
+  return (
+    <Suspense>
+      <SignUpForm />
+    </Suspense>
   )
 }

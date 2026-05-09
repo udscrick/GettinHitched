@@ -10,14 +10,17 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { weddingId, name, category, description } = body
+    const { eventId, name, category, description } = body
 
-    if (!weddingId || !name) {
-      return NextResponse.json({ error: "weddingId and name are required" }, { status: 400 })
+    if (!eventId || !name) {
+      return NextResponse.json({ error: "eventId and name are required" }, { status: 400 })
     }
 
+    const event = await db.event.findUnique({ where: { id: eventId } })
+    if (!event) return NextResponse.json({ error: "Event not found" }, { status: 404 })
+
     const member = await db.weddingMember.findFirst({
-      where: { weddingId, userId: session.user.id },
+      where: { weddingId: event.weddingId, userId: session.user.id },
     })
     if (!member || member.role === "VIEWER") {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
@@ -25,7 +28,7 @@ export async function POST(req: Request) {
 
     const album = await db.album.create({
       data: {
-        weddingId,
+        eventId,
         name,
         category: category ?? "GENERAL",
         description: description ?? undefined,

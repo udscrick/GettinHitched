@@ -4,13 +4,15 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
-async function getWeddingAccess(weddingId: string) {
+async function getEventAccess(eventId: string) {
   const session = await auth()
   if (!session?.user?.id) return null
-  return db.weddingMember.findFirst({ where: { weddingId, userId: session.user.id } })
+  const event = await db.event.findUnique({ where: { id: eventId } })
+  if (!event) return null
+  return db.weddingMember.findFirst({ where: { weddingId: event.weddingId, userId: session.user.id } })
 }
 
-export async function createVenue(weddingId: string, data: {
+export async function createVenue(eventId: string, data: {
   name: string
   address?: string
   city?: string
@@ -32,12 +34,12 @@ export async function createVenue(weddingId: string, data: {
   cons?: string
   rating?: number
 }) {
-  const member = await getWeddingAccess(weddingId)
+  const member = await getEventAccess(eventId)
   if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
 
   const venue = await db.venue.create({
     data: {
-      weddingId,
+      eventId,
       name: data.name,
       address: data.address,
       city: data.city,
@@ -60,11 +62,11 @@ export async function createVenue(weddingId: string, data: {
       rating: data.rating,
     },
   })
-  revalidatePath("/venues")
+  revalidatePath(`/events/${eventId}/venue`)
   return { success: true, venue }
 }
 
-export async function updateVenue(venueId: string, weddingId: string, data: Partial<{
+export async function updateVenue(venueId: string, eventId: string, data: Partial<{
   name: string
   address: string
   city: string
@@ -88,7 +90,7 @@ export async function updateVenue(venueId: string, weddingId: string, data: Part
   depositPaid: boolean
   depositAmount: string
 }>) {
-  const member = await getWeddingAccess(weddingId)
+  const member = await getEventAccess(eventId)
   if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
 
   const venue = await db.venue.update({
@@ -99,24 +101,24 @@ export async function updateVenue(venueId: string, weddingId: string, data: Part
       bookingDate: data.bookingDate ? new Date(data.bookingDate) : undefined,
     },
   })
-  revalidatePath("/venues")
+  revalidatePath(`/events/${eventId}/venue`)
   return { success: true, venue }
 }
 
-export async function deleteVenue(venueId: string, weddingId: string) {
-  const member = await getWeddingAccess(weddingId)
+export async function deleteVenue(venueId: string, eventId: string) {
+  const member = await getEventAccess(eventId)
   if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
 
   await db.venue.delete({ where: { id: venueId } })
-  revalidatePath("/venues")
+  revalidatePath(`/events/${eventId}/venue`)
   return { success: true }
 }
 
-export async function updateVenueStatus(venueId: string, weddingId: string, status: string) {
-  const member = await getWeddingAccess(weddingId)
+export async function updateVenueStatus(venueId: string, eventId: string, status: string) {
+  const member = await getEventAccess(eventId)
   if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
 
   await db.venue.update({ where: { id: venueId }, data: { status } })
-  revalidatePath("/venues")
+  revalidatePath(`/events/${eventId}/venue`)
   return { success: true }
 }

@@ -4,13 +4,17 @@ import { auth } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { revalidatePath } from "next/cache"
 
-async function getWeddingAccess(weddingId: string) {
+async function getEventAccess(eventId: string) {
   const session = await auth()
   if (!session?.user?.id) return null
-  return db.weddingMember.findFirst({ where: { weddingId, userId: session.user.id } })
+  const event = await db.event.findUnique({ where: { id: eventId } })
+  if (!event) return null
+  return db.weddingMember.findFirst({
+    where: { weddingId: event.weddingId, userId: session.user.id },
+  })
 }
 
-export async function createTask(weddingId: string, data: {
+export async function createTask(eventId: string, data: {
   title: string
   description?: string
   dueDate?: string
@@ -18,12 +22,12 @@ export async function createTask(weddingId: string, data: {
   category?: string
   notes?: string
 }) {
-  const member = await getWeddingAccess(weddingId)
+  const member = await getEventAccess(eventId)
   if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
 
   const task = await db.task.create({
     data: {
-      weddingId,
+      eventId,
       title: data.title,
       description: data.description,
       dueDate: data.dueDate ? new Date(data.dueDate) : null,
@@ -32,12 +36,12 @@ export async function createTask(weddingId: string, data: {
       notes: data.notes,
     },
   })
-  revalidatePath("/tasks")
+  revalidatePath(`/events/${eventId}/tasks`)
   return { success: true, task }
 }
 
-export async function toggleTask(taskId: string, weddingId: string, completed: boolean) {
-  const member = await getWeddingAccess(weddingId)
+export async function toggleTask(taskId: string, eventId: string, completed: boolean) {
+  const member = await getEventAccess(eventId)
   if (!member) return { error: "Unauthorized" }
 
   await db.task.update({
@@ -47,11 +51,11 @@ export async function toggleTask(taskId: string, weddingId: string, completed: b
       completedAt: completed ? new Date() : null,
     },
   })
-  revalidatePath("/tasks")
+  revalidatePath(`/events/${eventId}/tasks`)
   return { success: true }
 }
 
-export async function updateTask(taskId: string, weddingId: string, data: {
+export async function updateTask(taskId: string, eventId: string, data: {
   title?: string
   description?: string
   dueDate?: string | null
@@ -59,7 +63,7 @@ export async function updateTask(taskId: string, weddingId: string, data: {
   category?: string
   notes?: string
 }) {
-  const member = await getWeddingAccess(weddingId)
+  const member = await getEventAccess(eventId)
   if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
 
   await db.task.update({
@@ -69,15 +73,15 @@ export async function updateTask(taskId: string, weddingId: string, data: {
       dueDate: data.dueDate !== undefined ? (data.dueDate ? new Date(data.dueDate) : null) : undefined,
     },
   })
-  revalidatePath("/tasks")
+  revalidatePath(`/events/${eventId}/tasks`)
   return { success: true }
 }
 
-export async function deleteTask(taskId: string, weddingId: string) {
-  const member = await getWeddingAccess(weddingId)
+export async function deleteTask(taskId: string, eventId: string) {
+  const member = await getEventAccess(eventId)
   if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
 
   await db.task.delete({ where: { id: taskId } })
-  revalidatePath("/tasks")
+  revalidatePath(`/events/${eventId}/tasks`)
   return { success: true }
 }

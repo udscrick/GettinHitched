@@ -18,11 +18,17 @@ export default async function ReportsPage() {
 
   const { weddingId, wedding } = member
 
+  const events = await db.event.findMany({ where: { weddingId }, select: { id: true } })
+  const eventIds = events.map((e) => e.id)
+
   const [guests, expenses, categories, tasks] = await Promise.all([
-    db.guest.findMany({ where: { weddingId } }),
-    db.expense.findMany({ where: { weddingId }, include: { category: true } }),
-    db.expenseCategory.findMany({ where: { weddingId } }),
-    db.task.findMany({ where: { weddingId } }),
+    db.guest.findMany({ where: { eventId: { in: eventIds } } }),
+    db.expense.findMany({
+      where: { category: { eventId: { in: eventIds } } },
+      include: { category: true },
+    }),
+    db.expenseCategory.findMany({ where: { eventId: { in: eventIds } } }),
+    db.task.findMany({ where: { eventId: { in: eventIds } } }),
   ])
 
   // Guest analytics
@@ -38,18 +44,21 @@ export default async function ReportsPage() {
     mutual: guests.filter((g) => g.side === "BOTH").length,
   }
 
-  // Budget analytics
-  const totalBudget = parseFloat(wedding.totalBudget ?? "0")
+  // Budget analytics — totalBudget = sum of all category budgets across events
+  const totalBudget = categories.reduce((sum, c) => sum + parseFloat(c.budgetAmount ?? "0"), 0)
   const totalSpent = expenses.reduce((sum, e) => sum + parseFloat(e.totalAmount ?? "0"), 0)
-  const totalEstimated = expenses.reduce((sum, e) => sum + parseFloat(e.totalAmount ?? "0"), 0)
+  const totalEstimated = totalSpent
   const totalPaid = expenses.reduce((sum, e) => sum + parseFloat(e.paidAmount ?? "0"), 0)
   const remaining = totalBudget - totalSpent
 
-  const byCategory = categories.map((cat) => {
-    const catExpenses = expenses.filter((e) => e.categoryId === cat.id)
-    const spent = catExpenses.reduce((sum, e) => sum + parseFloat(e.totalAmount ?? "0"), 0)
-    return { name: cat.name, spent, count: catExpenses.length, color: cat.color }
-  }).filter((c) => c.count > 0).sort((a, b) => b.spent - a.spent)
+  const byCategory = categories
+    .map((cat) => {
+      const catExpenses = expenses.filter((e) => e.categoryId === cat.id)
+      const spent = catExpenses.reduce((sum, e) => sum + parseFloat(e.totalAmount ?? "0"), 0)
+      return { name: cat.name, spent, count: catExpenses.length, color: cat.color }
+    })
+    .filter((c) => c.count > 0)
+    .sort((a, b) => b.spent - a.spent)
 
   // Task analytics
   const completedTasks = tasks.filter((t) => t.isCompleted).length
@@ -131,7 +140,7 @@ export default async function ReportsPage() {
               <div className="pt-2 border-t">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">Dietary Needs</span>
-                  <Badge variant="warning">{dietaryNeeds} guests</Badge>
+                  <Badge variant="secondary">{dietaryNeeds} guests</Badge>
                 </div>
               </div>
             )}

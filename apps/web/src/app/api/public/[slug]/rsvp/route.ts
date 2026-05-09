@@ -23,10 +23,21 @@ export async function POST(
 
     const rsvpStatus = attending === "yes" || attending === true ? "ATTENDING" : "DECLINED"
 
-    // Find existing guest by email or create new
+    const events = await db.event.findMany({
+      where: { weddingId: wedding.id },
+      select: { id: true },
+      orderBy: { sortOrder: "asc" },
+    })
+    const eventIds = events.map(e => e.id)
+    const firstEventId = eventIds[0]
+
+    if (!firstEventId) {
+      return NextResponse.json({ error: "No events found" }, { status: 400 })
+    }
+
     let guest = email
       ? await db.guest.findFirst({
-          where: { weddingId: wedding.id, email: email.toLowerCase() },
+          where: { eventId: { in: eventIds }, email: email.toLowerCase() },
         })
       : null
 
@@ -42,7 +53,7 @@ export async function POST(
     } else {
       await db.guest.create({
         data: {
-          weddingId: wedding.id,
+          eventId: firstEventId,
           firstName,
           lastName,
           email: email?.toLowerCase(),

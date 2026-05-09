@@ -1,14 +1,20 @@
-import { auth } from "@/lib/auth"
+import NextAuth from "next-auth"
 import { NextResponse } from "next/server"
+import { authConfig } from "@/lib/auth.config"
+
+const { auth } = NextAuth(authConfig)
 
 export default auth((req) => {
-  const { nextUrl, auth: session } = req
-  const isLoggedIn = !!session
+  const { nextUrl } = req
+  const isLoggedIn = !!req.auth
 
   const isAuthRoute = nextUrl.pathname.startsWith("/sign-in") ||
     nextUrl.pathname.startsWith("/sign-up")
   const isPublicRoute = nextUrl.pathname.startsWith("/w/") ||
-    nextUrl.pathname.startsWith("/api/public")
+    nextUrl.pathname.startsWith("/api/public") ||
+    nextUrl.pathname.startsWith("/api/auth") ||
+    nextUrl.pathname.startsWith("/invite/") ||
+    nextUrl.pathname === "/api/register"
   const isOnboarding = nextUrl.pathname.startsWith("/onboarding")
 
   if (isPublicRoute) return NextResponse.next()

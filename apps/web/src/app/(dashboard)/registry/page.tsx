@@ -17,7 +17,6 @@ export default async function RegistryPage() {
             include: { registryItem: true, guest: true },
             orderBy: { createdAt: "desc" },
           },
-          guests: { select: { id: true, firstName: true, lastName: true }, orderBy: { firstName: "asc" } },
         },
       },
     },
@@ -36,7 +35,7 @@ export default async function RegistryPage() {
         weddingId={wedding.id}
         registryItems={wedding.registryItems}
         giftsReceived={wedding.giftsReceived}
-        guests={wedding.guests}
+        guests={[]}
         role={role}
       />
     </div>

@@ -103,15 +103,9 @@ export default async function PublicWeddingPage({ params }: PageProps) {
             <p className="text-xl sm:text-2xl font-sans font-light mt-4">{weddingDate}</p>
           )}
 
-          {(wedding.weddingLocation || wedding.city) && (
+          {wedding.city && (
             <p className="text-lg font-sans text-opacity-80">
-              {[wedding.weddingLocation, wedding.city, wedding.state].filter(Boolean).join(" · ")}
-            </p>
-          )}
-
-          {wedding.weddingTime && (
-            <p className="text-base font-sans" style={{ color: t.accent }}>
-              {wedding.weddingTime}
+              {[wedding.city, wedding.state].filter(Boolean).join(" · ")}
             </p>
           )}
 
@@ -166,12 +160,6 @@ export default async function PublicWeddingPage({ params }: PageProps) {
                 {weddingDate && (
                   <div>
                     <p className="font-semibold text-lg">{weddingDate}</p>
-                    {wedding.weddingTime && (
-                      <p className="opacity-80">{wedding.weddingTime}</p>
-                    )}
-                    {wedding.weddingLocation && (
-                      <p className="opacity-80">{wedding.weddingLocation}</p>
-                    )}
                   </div>
                 )}
               </div>

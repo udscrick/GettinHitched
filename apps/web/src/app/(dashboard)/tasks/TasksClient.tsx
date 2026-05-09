@@ -39,7 +39,7 @@ interface Task {
 }
 
 interface Props {
-  weddingId: string
+  eventId: string
   tasks: Task[]
   role: string
 }
@@ -65,7 +65,7 @@ const defaultForm = {
   dueDate: "",
 }
 
-export function TasksClient({ weddingId, tasks, role }: Props) {
+export function TasksClient({ eventId, tasks, role }: Props) {
   const router = useRouter()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -102,7 +102,7 @@ export function TasksClient({ weddingId, tasks, role }: Props) {
   const categories = Object.keys(grouped).sort()
 
   async function handleToggle(taskId: string, current: boolean) {
-    const res = await toggleTask(taskId, weddingId, !current)
+    const res = await toggleTask(taskId, eventId, !current)
     if (res.error) { toast.error(res.error); return }
     router.refresh()
   }
@@ -111,7 +111,7 @@ export function TasksClient({ weddingId, tasks, role }: Props) {
     if (!form.title) { toast.error("Task title is required"); return }
     setLoading(true)
     try {
-      const res = await createTask(weddingId, {
+      const res = await createTask(eventId, {
         title: form.title,
         description: form.description || undefined,
         category: form.category || undefined,
@@ -129,7 +129,7 @@ export function TasksClient({ weddingId, tasks, role }: Props) {
   }
 
   async function handleDelete(id: string) {
-    const res = await deleteTask(id, weddingId)
+    const res = await deleteTask(id, eventId)
     if (res.error) { toast.error(res.error); return }
     toast.success("Task deleted")
     setDeleteId(null)

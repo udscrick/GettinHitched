@@ -16,7 +16,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { Settings, Users, Trash2, Plus, Crown, Shield, Pencil, Eye } from "lucide-react"
+import { Settings, Users, Trash2, Plus, Crown, Shield, Pencil, Eye, Copy, Check, Link2 } from "lucide-react"
 import { initials } from "@/lib/utils"
 
 type Member = {
@@ -38,7 +38,10 @@ export default function SettingsPage() {
   const [currentUserId, setCurrentUserId] = useState("")
   const [currentRole, setCurrentRole] = useState("")
   const [openInvite, setOpenInvite] = useState(false)
-  const [inviteForm, setInviteForm] = useState({ email: "", role: "EDITOR" })
+  const [inviteRole, setInviteRole] = useState("EDITOR")
+  const [inviteLink, setInviteLink] = useState("")
+  const [inviteExpiry, setInviteExpiry] = useState<Date | null>(null)
+  const [copied, setCopied] = useState(false)
 
   const [wedding, setWedding] = useState({
     id: "",
@@ -97,24 +100,27 @@ export default function SettingsPage() {
     }
   }
 
-  async function handleInvite() {
-    if (!inviteForm.email.trim()) { toast.error("Email is required"); return }
+  async function handleGenerateLink() {
     setLoading(true)
     try {
-      const res = await fetch("/api/settings/invite", {
+      const res = await fetch("/api/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ weddingId: wedding.id, ...inviteForm }),
+        body: JSON.stringify({ role: inviteRole }),
       })
       const data = await res.json()
       if (data.error) { toast.error(data.error); return }
-      setMembers([...members, data.member])
-      setOpenInvite(false)
-      setInviteForm({ email: "", role: "EDITOR" })
-      toast.success("Member invited!")
+      setInviteLink(data.inviteUrl)
+      setInviteExpiry(new Date(data.expiresAt))
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleCopyLink() {
+    await navigator.clipboard.writeText(inviteLink)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   async function handleRemove(memberId: string) {
@@ -290,58 +296,74 @@ export default function SettingsPage() {
       </Card>
 
       {/* Invite Dialog */}
-      <Dialog open={openInvite} onOpenChange={setOpenInvite}>
+      <Dialog open={openInvite} onOpenChange={(open) => { setOpenInvite(open); if (!open) { setInviteLink(""); setInviteExpiry(null) } }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="font-serif">Invite Collaborator</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Email Address *</Label>
-              <Input
-                type="email"
-                value={inviteForm.email}
-                onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
-                placeholder="person@example.com"
-              />
-              <p className="text-xs text-muted-foreground">
-                They must already have a GettinHitched account
-              </p>
-            </div>
-            <div className="space-y-2">
               <Label>Role</Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {(["ADMIN", "EDITOR", "VIEWER"] as const).map((role) => {
                   const config = ROLE_CONFIG[role]
                   const Icon = config.icon
                   return (
                     <button
                       key={role}
-                      onClick={() => setInviteForm({ ...inviteForm, role })}
-                      className={`flex items-center gap-2 p-3 rounded-lg border text-left transition-colors ${
-                        inviteForm.role === role
+                      onClick={() => { setInviteRole(role); setInviteLink("") }}
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-lg border text-center transition-colors ${
+                        inviteRole === role
                           ? "border-primary bg-primary/5"
                           : "border-border hover:border-primary/50"
                       }`}
                     >
                       <Icon className="h-4 w-4 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium">{config.label}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {role === "ADMIN" ? "Full access" : role === "EDITOR" ? "Can edit" : "View only"}
-                        </p>
-                      </div>
+                      <p className="text-sm font-medium">{config.label}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {role === "ADMIN" ? "Full access" : role === "EDITOR" ? "Can edit" : "View only"}
+                      </p>
                     </button>
                   )
                 })}
               </div>
             </div>
+
+            {inviteLink ? (
+              <div className="space-y-2">
+                <Label>Invite Link</Label>
+                <div className="flex gap-2">
+                  <Input readOnly value={inviteLink} className="font-mono text-xs" />
+                  <Button size="icon" variant="outline" onClick={handleCopyLink}>
+                    {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+                {inviteExpiry && (
+                  <p className="text-xs text-muted-foreground">
+                    Expires {inviteExpiry.toLocaleDateString()}. Anyone with this link can join.
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Generate a shareable link. Anyone who clicks it can sign in or create an account and join as a{" "}
+                <span className="font-medium">{ROLE_CONFIG[inviteRole]?.label}</span>.
+              </p>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setOpenInvite(false)}>Cancel</Button>
-            <Button onClick={handleInvite} disabled={loading}>
-              {loading ? "Inviting..." : "Send Invite"}
-            </Button>
+            <Button variant="outline" onClick={() => setOpenInvite(false)}>Close</Button>
+            {!inviteLink ? (
+              <Button onClick={handleGenerateLink} disabled={loading}>
+                <Link2 className="h-4 w-4 mr-2" />
+                {loading ? "Generating..." : "Generate Link"}
+              </Button>
+            ) : (
+              <Button onClick={handleCopyLink}>
+                {copied ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                {copied ? "Copied!" : "Copy Link"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,343 +1,221 @@
-import { auth } from "@/lib/auth"
+import { auth, signOut } from "@/lib/auth"
 import { db } from "@/lib/db"
 import { redirect } from "next/navigation"
-import { formatDate, formatCurrency, daysUntil, parseAmount } from "@/lib/utils"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
-import {
-  Heart,
-  Users,
-  DollarSign,
-  CheckSquare,
-  ShoppingBag,
-  Calendar,
-  Clock,
-  TrendingDown,
-  Sparkles,
-} from "lucide-react"
 import Link from "next/link"
+import { format, differenceInDays } from "date-fns"
+import { Calendar, Users, CheckSquare, DollarSign, ChevronRight, Plus, MapPin } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+
+const EVENT_TYPE_COLORS: Record<string, string> = {
+  ROKA: "bg-amber-100 text-amber-800",
+  ENGAGEMENT: "bg-pink-100 text-pink-800",
+  MEHENDI: "bg-green-100 text-green-800",
+  HALDI: "bg-yellow-100 text-yellow-800",
+  SANGEET: "bg-purple-100 text-purple-800",
+  TILAK: "bg-orange-100 text-orange-800",
+  BARAAT: "bg-red-100 text-red-800",
+  WEDDING_CEREMONY: "bg-rose-100 text-rose-800",
+  RECEPTION: "bg-blue-100 text-blue-800",
+  GRIHA_PRAVESH: "bg-teal-100 text-teal-800",
+  CUSTOM: "bg-gray-100 text-gray-800",
+}
+
+const EVENT_TYPE_LABELS: Record<string, string> = {
+  ROKA: "Roka", ENGAGEMENT: "Engagement", MEHENDI: "Mehendi", HALDI: "Haldi",
+  SANGEET: "Sangeet", TILAK: "Tilak", BARAAT: "Baraat",
+  WEDDING_CEREMONY: "Wedding Ceremony", RECEPTION: "Reception",
+  GRIHA_PRAVESH: "Griha Pravesh", CUSTOM: "Custom",
+}
 
 export default async function DashboardPage() {
   const session = await auth()
   if (!session?.user?.id) redirect("/sign-in")
 
-  const weddingMember = await db.weddingMember.findFirst({
+  const userExists = await db.user.findUnique({ where: { id: session.user.id }, select: { id: true } })
+  if (!userExists) await signOut({ redirectTo: "/sign-in" })
+
+  const member = await db.weddingMember.findFirst({
     where: { userId: session.user.id },
-    include: { wedding: true },
-    orderBy: { joinedAt: "asc" },
+    include: {
+      wedding: {
+        include: {
+          events: {
+            orderBy: { sortOrder: "asc" },
+            include: {
+              _count: { select: { guests: true, tasks: true } },
+              guests: { where: { rsvpStatus: "CONFIRMED" }, select: { id: true } },
+              tasks: { where: { isCompleted: false }, select: { id: true } },
+              expenses: { select: { totalAmount: true, paidAmount: true } },
+            },
+          },
+        },
+      },
+    },
   })
 
-  if (!weddingMember) redirect("/onboarding")
-  const { wedding } = weddingMember
-  const wid = wedding.id
+  if (!member) redirect("/onboarding")
+  const { wedding } = member
 
-  // Fetch stats in parallel
-  const [guests, expenses, tasks, vendors] = await Promise.all([
-    db.guest.findMany({ where: { weddingId: wid }, select: { rsvpStatus: true } }),
-    db.expense.findMany({ where: { weddingId: wid }, select: { totalAmount: true, paidAmount: true, status: true, dueDate: true, title: true } }),
-    db.task.findMany({ where: { weddingId: wid }, select: { isCompleted: true, dueDate: true, priority: true, title: true } }),
-    db.vendor.findMany({ where: { weddingId: wid }, select: { status: true, name: true, type: true } }),
-  ])
+  const totalGuests = wedding.events.reduce((s, e) => s + e._count.guests, 0)
+  const totalOpenTasks = wedding.events.reduce((s, e) => s + e._count.tasks, 0)
+  const totalSpend = wedding.events.reduce((s, e) =>
+    s + e.expenses.reduce((es, ex) => es + parseFloat(ex.totalAmount || "0"), 0), 0)
 
-  const days = daysUntil(wedding.weddingDate)
-  const totalBudget = parseAmount(wedding.totalBudget)
-  const totalSpent = expenses.reduce((s, e) => s + parseAmount(e.paidAmount), 0)
-  const totalEstimated = expenses.reduce((s, e) => s + parseAmount(e.totalAmount), 0)
-  const budgetPct = totalBudget > 0 ? Math.min(100, (totalEstimated / totalBudget) * 100) : 0
-  const spentPct = totalBudget > 0 ? Math.min(100, (totalSpent / totalBudget) * 100) : 0
-
-  const rsvpAttending = guests.filter((g) => g.rsvpStatus === "ATTENDING").length
-  const rsvpDeclined = guests.filter((g) => g.rsvpStatus === "DECLINED").length
-  const rsvpPending = guests.filter((g) => g.rsvpStatus === "PENDING").length
-
-  const completedTasks = tasks.filter((t) => t.isCompleted).length
-  const taskPct = tasks.length > 0 ? (completedTasks / tasks.length) * 100 : 0
-
-  const overdueTasks = tasks.filter(
-    (t) => !t.isCompleted && t.dueDate && new Date(t.dueDate) < new Date()
-  )
-  const upcomingTasks = tasks
-    .filter((t) => !t.isCompleted && t.dueDate && new Date(t.dueDate) >= new Date())
-    .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
-    .slice(0, 5)
-
-  const bookedVendors = vendors.filter((v) =>
-    ["BOOKED", "CONTRACT_SIGNED", "COMPLETED"].includes(v.status)
-  ).length
-
-  const upcomingPayments = expenses
-    .filter((e) => e.status !== "PAID" && e.dueDate && new Date(e.dueDate) >= new Date())
-    .sort((a, b) => new Date(a.dueDate!).getTime() - new Date(b.dueDate!).getTime())
-    .slice(0, 3)
-
-  const QUICK_ACTIONS = [
-    { label: "Add Guest", href: "/guests", icon: Users },
-    { label: "Add Expense", href: "/budget", icon: DollarSign },
-    { label: "Add Task", href: "/tasks", icon: CheckSquare },
-    { label: "Add Vendor", href: "/vendors", icon: ShoppingBag },
-  ]
+  const now = new Date()
+  const upcoming = wedding.events
+    .filter(e => e.date && new Date(e.date) >= now)
+    .sort((a, b) => new Date(a.date!).getTime() - new Date(b.date!).getTime())[0]
+  const daysToNext = upcoming?.date ? differenceInDays(new Date(upcoming.date), now) : null
 
   return (
-    <div className="space-y-6 animate-fade-in">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <div>
-          <h1 className="font-serif text-3xl font-bold">
-            {wedding.partnerOneName} & {wedding.partnerTwoName}
-          </h1>
-          {wedding.weddingDate && (
-            <p className="text-muted-foreground mt-1">
-              {formatDate(wedding.weddingDate)}
-              {wedding.city && ` · ${wedding.city}${wedding.state ? `, ${wedding.state}` : ""}`}
-            </p>
-          )}
-        </div>
-        {days !== null && (
-          <div className={`flex items-center gap-2 rounded-2xl px-5 py-3 ${
-            days === 0
-              ? "bg-champagne-gold text-white"
-              : days < 0
-              ? "bg-sage-100 text-sage-700"
-              : "bg-champagne text-champagne-gold"
-          }`}>
-            <Heart className="h-5 w-5" />
-            <div className="text-center">
-              <p className="text-2xl font-bold leading-none">
-                {days === 0 ? "TODAY!" : Math.abs(days)}
-              </p>
-              <p className="text-xs mt-0.5">
-                {days === 0 ? "💍" : days > 0 ? "days to go" : "days ago"}
-              </p>
+    <div className="p-6 max-w-5xl mx-auto space-y-8">
+      <div>
+        <h1 className="font-serif text-3xl font-bold">
+          {wedding.partnerOneName} &amp; {wedding.partnerTwoName}
+        </h1>
+        <p className="text-muted-foreground mt-1">Wedding planning overview</p>
+      </div>
+
+      {upcoming && daysToNext !== null && (
+        <Link href={`/events/${upcoming.id}`}>
+          <Card className="bg-gradient-to-r from-champagne/30 to-blush/20 border-champagne-gold/30 hover:shadow-md transition-shadow cursor-pointer">
+            <CardContent className="flex items-center justify-between py-5 px-6">
+              <div>
+                <p className="text-sm text-muted-foreground">Next event</p>
+                <p className="font-serif text-xl font-bold mt-0.5">{upcoming.name}</p>
+                {upcoming.date && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {format(new Date(upcoming.date), "EEEE, d MMMM yyyy")}
+                    {upcoming.location && ` · ${upcoming.location}`}
+                  </p>
+                )}
+              </div>
+              <div className="text-right">
+                <p className="font-serif text-4xl font-bold text-champagne-gold">{daysToNext}</p>
+                <p className="text-sm text-muted-foreground">days away</p>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      )}
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-50"><Calendar className="h-5 w-5 text-blue-600" /></div>
+              <div>
+                <p className="text-xs text-muted-foreground">Events</p>
+                <p className="text-2xl font-bold font-serif">{wedding.events.length}</p>
+              </div>
             </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-green-50"><Users className="h-5 w-5 text-green-600" /></div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Guests</p>
+                <p className="text-2xl font-bold font-serif">{totalGuests}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-50"><CheckSquare className="h-5 w-5 text-amber-600" /></div>
+              <div>
+                <p className="text-xs text-muted-foreground">Open Tasks</p>
+                <p className="text-2xl font-bold font-serif">{totalOpenTasks}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-5">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-purple-50"><DollarSign className="h-5 w-5 text-purple-600" /></div>
+              <div>
+                <p className="text-xs text-muted-foreground">Total Spend</p>
+                <p className="text-xl font-bold font-serif">
+                  ₹{totalSpend >= 100000 ? `${(totalSpend / 100000).toFixed(1)}L` : totalSpend.toLocaleString("en-IN")}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-serif text-xl font-semibold">All Events</h2>
+          <Button variant="ghost" size="sm" asChild>
+            <Link href="/events">View all <ChevronRight className="h-4 w-4 ml-1" /></Link>
+          </Button>
+        </div>
+
+        {wedding.events.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center py-12 gap-4">
+              <Calendar className="h-10 w-10 text-muted-foreground" />
+              <div className="text-center">
+                <p className="font-medium">No events yet</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Add your first event — Mehendi, Sangeet, Wedding Ceremony, and more
+                </p>
+              </div>
+              <Button variant="gold" asChild>
+                <Link href="/events"><Plus className="h-4 w-4 mr-2" />Add First Event</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {wedding.events.map(event => {
+              const openTasks = event.tasks.length
+              const totalPaid = event.expenses.reduce((s, e) => s + parseFloat(e.paidAmount || "0"), 0)
+              return (
+                <Link key={event.id} href={`/events/${event.id}`}>
+                  <Card className="hover:shadow-sm transition-shadow cursor-pointer">
+                    <CardContent className="flex items-center gap-4 py-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${EVENT_TYPE_COLORS[event.type] ?? EVENT_TYPE_COLORS.CUSTOM}`}>
+                            {EVENT_TYPE_LABELS[event.type] ?? event.type}
+                          </span>
+                          <span className="font-semibold truncate">{event.name}</span>
+                        </div>
+                        <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground flex-wrap">
+                          {event.date && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {format(new Date(event.date), "d MMM yyyy")}
+                            </span>
+                          )}
+                          {event.location && (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />{event.location}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="hidden sm:flex items-center gap-6 text-sm text-muted-foreground shrink-0">
+                        <span>{event._count.guests} guests</span>
+                        <span>{openTasks} open tasks</span>
+                        <span>₹{totalPaid.toLocaleString("en-IN")} paid</span>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                    </CardContent>
+                  </Card>
+                </Link>
+              )
+            })}
           </div>
         )}
       </div>
-
-      {/* Quick actions */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {QUICK_ACTIONS.map((action) => {
-          const Icon = action.icon
-          return (
-            <Link key={action.label} href={action.href}>
-              <div className="flex items-center gap-2 rounded-xl border bg-card p-3 text-sm font-medium transition-colors hover:bg-accent card-hover">
-                <Icon className="h-4 w-4 text-champagne-gold" />
-                {action.label}
-              </div>
-            </Link>
-          )
-        })}
-      </div>
-
-      {/* Stats row */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Guests */}
-        <Card className="card-hover">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium font-sans flex items-center justify-between">
-              Guests
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold font-serif">{guests.length}</div>
-            <div className="flex gap-2 mt-2 flex-wrap">
-              <Badge variant="success">{rsvpAttending} Attending</Badge>
-              <Badge variant="destructive">{rsvpDeclined} Declined</Badge>
-              <Badge variant="outline">{rsvpPending} Pending</Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Budget */}
-        <Card className="card-hover">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium font-sans flex items-center justify-between">
-              Budget
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold font-serif">
-              {formatCurrency(totalSpent)}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              of {formatCurrency(totalBudget)} total budget
-            </p>
-            <Progress value={spentPct} className="mt-2 h-1.5" />
-          </CardContent>
-        </Card>
-
-        {/* Tasks */}
-        <Card className="card-hover">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium font-sans flex items-center justify-between">
-              Checklist
-              <CheckSquare className="h-4 w-4 text-muted-foreground" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold font-serif">
-              {completedTasks}/{tasks.length}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              tasks completed
-              {overdueTasks.length > 0 && (
-                <span className="text-destructive ml-1">· {overdueTasks.length} overdue</span>
-              )}
-            </p>
-            <Progress value={taskPct} className="mt-2 h-1.5" />
-          </CardContent>
-        </Card>
-
-        {/* Vendors */}
-        <Card className="card-hover">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base font-medium font-sans flex items-center justify-between">
-              Vendors
-              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold font-serif">{bookedVendors}/{vendors.length}</div>
-            <p className="text-xs text-muted-foreground mt-1">booked</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Two column layout */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Upcoming tasks */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-champagne-gold" />
-              Upcoming Tasks
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {upcomingTasks.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Sparkles className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                <p className="text-sm">All caught up! 🎉</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {upcomingTasks.map((task) => (
-                  <div key={task.title} className="flex items-start gap-3">
-                    <div className={`mt-0.5 h-2 w-2 rounded-full shrink-0 ${
-                      task.priority === "URGENT" ? "bg-destructive" :
-                      task.priority === "HIGH" ? "bg-amber-500" : "bg-sage-400"
-                    }`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{task.title}</p>
-                      {task.dueDate && (
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(task.dueDate)}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                <Link href="/tasks">
-                  <Button variant="ghost" size="sm" className="w-full mt-2">
-                    View all tasks →
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Upcoming payments */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingDown className="h-4 w-4 text-champagne-gold" />
-              Upcoming Payments
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {upcomingPayments.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <DollarSign className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                <p className="text-sm">No upcoming payments</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {upcomingPayments.map((payment) => (
-                  <div key={payment.title} className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium">{payment.title}</p>
-                      {payment.dueDate && (
-                        <p className="text-xs text-muted-foreground">{formatDate(payment.dueDate)}</p>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-champagne-gold">
-                        {formatCurrency(parseAmount(payment.totalAmount) - parseAmount(payment.paidAmount))}
-                      </p>
-                      <p className="text-xs text-muted-foreground">remaining</p>
-                    </div>
-                  </div>
-                ))}
-                <Link href="/budget">
-                  <Button variant="ghost" size="sm" className="w-full mt-2">
-                    View budget →
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* RSVP breakdown */}
-      {guests.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-champagne-gold" />
-              RSVP Progress
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                  <span>Responses received</span>
-                  <span>{guests.length - rsvpPending}/{guests.length}</span>
-                </div>
-                <div className="h-3 rounded-full bg-muted overflow-hidden flex">
-                  <div
-                    className="bg-emerald-400 transition-all"
-                    style={{ width: `${(rsvpAttending / guests.length) * 100}%` }}
-                  />
-                  <div
-                    className="bg-red-300 transition-all"
-                    style={{ width: `${(rsvpDeclined / guests.length) * 100}%` }}
-                  />
-                </div>
-              </div>
-              <div className="flex gap-4 text-sm shrink-0">
-                <div className="text-center">
-                  <div className="text-lg font-bold font-serif text-emerald-600">{rsvpAttending}</div>
-                  <div className="text-xs text-muted-foreground">Yes</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold font-serif text-red-500">{rsvpDeclined}</div>
-                  <div className="text-xs text-muted-foreground">No</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-lg font-bold font-serif text-muted-foreground">{rsvpPending}</div>
-                  <div className="text-xs text-muted-foreground">Awaiting</div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   )
 }

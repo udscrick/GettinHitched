@@ -109,7 +109,7 @@ interface Vendor {
 }
 
 interface Props {
-  weddingId: string
+  eventId: string
   vendors: Vendor[]
   role: string
 }
@@ -135,7 +135,7 @@ const defaultCommForm = {
   notes: "",
 }
 
-export function VendorsClient({ weddingId, vendors, role }: Props) {
+export function VendorsClient({ eventId, vendors, role }: Props) {
   const router = useRouter()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -194,11 +194,11 @@ export function VendorsClient({ weddingId, vendors, role }: Props) {
         rating: form.rating ? parseInt(form.rating) : undefined,
       }
       if (editVendor) {
-        const res = await updateVendor(editVendor.id, weddingId, data)
+        const res = await updateVendor(editVendor.id, eventId, data)
         if (res.error) { toast.error(res.error); return }
         toast.success("Vendor updated!")
       } else {
-        const res = await createVendor(weddingId, data)
+        const res = await createVendor(eventId, data)
         if (res.error) { toast.error(res.error); return }
         toast.success("Vendor added!")
       }
@@ -210,7 +210,7 @@ export function VendorsClient({ weddingId, vendors, role }: Props) {
   }
 
   async function handleDelete(id: string) {
-    const res = await deleteVendor(id, weddingId)
+    const res = await deleteVendor(id, eventId)
     if (res.error) { toast.error(res.error); return }
     toast.success("Vendor removed")
     setDeleteId(null)
@@ -224,7 +224,7 @@ export function VendorsClient({ weddingId, vendors, role }: Props) {
     }
     setLoading(true)
     try {
-      const res = await addVendorCommunication(activeVendorId, weddingId, commForm)
+      const res = await addVendorCommunication(activeVendorId, eventId, commForm)
       if (res.error) { toast.error(res.error); return }
       toast.success("Communication logged!")
       setCommDialogOpen(false)

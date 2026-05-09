@@ -62,7 +62,7 @@ interface Table {
 }
 
 interface Props {
-  weddingId: string
+  eventId: string
   guests: Guest[]
   tables: Table[]
   role: string
@@ -101,7 +101,7 @@ const defaultForm = {
   address: "",
 }
 
-export function GuestsClient({ weddingId, guests, tables, role }: Props) {
+export function GuestsClient({ eventId, guests, tables, role }: Props) {
   const router = useRouter()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
@@ -159,11 +159,11 @@ export function GuestsClient({ weddingId, guests, tables, role }: Props) {
         address: form.address || undefined,
       }
       if (editGuest) {
-        const res = await updateGuest(editGuest.id, weddingId, data)
+        const res = await updateGuest(editGuest.id, eventId, data)
         if (res.error) { toast.error(res.error); return }
         toast.success("Guest updated!")
       } else {
-        const res = await createGuest(weddingId, data)
+        const res = await createGuest(eventId, data)
         if (res.error) { toast.error(res.error); return }
         toast.success("Guest added!")
       }
@@ -175,7 +175,7 @@ export function GuestsClient({ weddingId, guests, tables, role }: Props) {
   }
 
   async function handleDelete(id: string) {
-    const res = await deleteGuest(id, weddingId)
+    const res = await deleteGuest(id, eventId)
     if (res.error) { toast.error(res.error); return }
     toast.success("Guest removed")
     setDeleteId(null)
@@ -183,7 +183,7 @@ export function GuestsClient({ weddingId, guests, tables, role }: Props) {
   }
 
   async function handleRsvp(guestId: string, status: string) {
-    const res = await updateGuestRSVP(guestId, weddingId, status)
+    const res = await updateGuestRSVP(guestId, eventId, status)
     if (res.error) { toast.error(res.error); return }
     toast.success("RSVP updated")
     router.refresh()

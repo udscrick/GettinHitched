@@ -11,8 +11,10 @@ async function requireAuth() {
 }
 
 export async function getInvitations(weddingId: string) {
+  const events = await db.event.findMany({ where: { weddingId }, select: { id: true } })
+  const eventIds = events.map(e => e.id)
   return db.invitationBatch.findMany({
-    where: { weddingId },
+    where: { eventId: { in: eventIds } },
     include: {
       invitations: {
         include: {
@@ -24,7 +26,7 @@ export async function getInvitations(weddingId: string) {
   })
 }
 
-export async function createBatch(weddingId: string, data: {
+export async function createBatch(eventId: string, data: {
   name: string
   type?: string
   method?: string
@@ -36,7 +38,7 @@ export async function createBatch(weddingId: string, data: {
 
   const batch = await db.invitationBatch.create({
     data: {
-      weddingId,
+      eventId,
       ...rest,
       rsvpDeadline: rsvpDeadline ? new Date(rsvpDeadline) : undefined,
     },

@@ -28,13 +28,8 @@
     "plugins": [
       "expo-router",
       "expo-image-picker",
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/icon.png",
-          "color": "#C9A96E"
-        }
-      ]
+"expo-font",
+      "expo-secure-store"
     ],
     "scheme": "gettinhitched"
   }
