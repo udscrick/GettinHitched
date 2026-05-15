@@ -44,7 +44,7 @@ export default async function InvitationsPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="font-serif text-3xl font-bold">Invitations</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold">Invitations</h1>
         <p className="text-muted-foreground mt-1">
           Manage invitation batches and track delivery status
         </p>

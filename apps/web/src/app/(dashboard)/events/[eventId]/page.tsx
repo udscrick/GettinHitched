@@ -61,7 +61,7 @@ export default async function EventOverviewPage({ params }: { params: { eventId:
         <div className="inline-block text-xs font-medium px-2 py-0.5 rounded-full bg-champagne/30 text-champagne-gold mb-2">
           {EVENT_TYPE_LABELS[event.type] ?? event.type}
         </div>
-        <h1 className="font-serif text-3xl font-bold">{event.name}</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold">{event.name}</h1>
         <div className="flex flex-wrap gap-4 mt-3 text-sm text-muted-foreground">
           {event.date && (
             <div className="flex items-center gap-1.5">

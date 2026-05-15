@@ -72,7 +72,7 @@ export default async function DashboardPage() {
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8">
       <div>
-        <h1 className="font-serif text-3xl font-bold">
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold">
           {wedding.partnerOneName} &amp; {wedding.partnerTwoName}
         </h1>
         <p className="text-muted-foreground mt-1">Wedding planning overview</p>

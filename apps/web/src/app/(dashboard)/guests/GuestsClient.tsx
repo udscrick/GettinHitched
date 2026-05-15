@@ -205,7 +205,7 @@ export function GuestsClient({ eventId, guests, tables, role }: Props) {
               placeholder="Search guests..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 w-48"
+              className="pl-9 w-full sm:w-48"
             />
           </div>
           <Select value={filterRsvp} onValueChange={setFilterRsvp}>
@@ -261,8 +261,8 @@ export function GuestsClient({ eventId, guests, tables, role }: Props) {
           </CardContent>
         </Card>
       ) : (
-        <div className="rounded-lg border overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-lg border overflow-hidden overflow-x-auto">
+          <table className="w-full text-sm min-w-[400px]">
             <thead className="bg-muted/50">
               <tr>
                 <th className="text-left p-3 font-medium">Name</th>
@@ -367,7 +367,7 @@ export function GuestsClient({ eventId, guests, tables, role }: Props) {
               {editGuest ? "Edit Guest" : "Add Guest"}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
             <div className="space-y-2">
               <Label>First Name *</Label>
               <Input

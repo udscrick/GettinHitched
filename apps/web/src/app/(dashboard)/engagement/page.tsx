@@ -106,12 +106,12 @@ export default function EngagementPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="font-serif text-3xl font-bold">Engagement</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold">Engagement</h1>
           <p className="text-muted-foreground mt-1">Celebrate and document your love story</p>
         </div>
-        <Button onClick={handleSave} disabled={loading}>
+        <Button onClick={handleSave} disabled={loading} className="sm:shrink-0">
           {loading ? "Saving..." : "Save All"}
         </Button>
       </div>
@@ -142,7 +142,7 @@ export default function EngagementPage() {
             <CardHeader>
               <CardTitle className="font-serif text-xl">Proposal Details</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-4">
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Proposal Date</Label>
                 <Input
@@ -204,7 +204,7 @@ export default function EngagementPage() {
           <CardHeader>
             <CardTitle className="font-serif text-xl">Engagement Party</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Party Date</Label>
               <Input

@@ -91,7 +91,7 @@ export default function WebsitePage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-3xl font-bold">Wedding Website</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold">Wedding Website</h1>
           <p className="text-muted-foreground mt-1">Your public wedding page for guests</p>
         </div>
         <div className="flex gap-3">

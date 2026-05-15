@@ -112,7 +112,7 @@ export default function NotesPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-3xl font-bold">Notes</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold">Notes</h1>
           <p className="text-muted-foreground mt-1">Shared notes for your wedding planning team</p>
         </div>
         <Button onClick={() => { setEditNote(null); setForm({ title: "", content: "", category: "general" }); setOpen(true) }}>

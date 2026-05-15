@@ -122,7 +122,7 @@ export function EventsClient({ events, weddingId, partnerOneName, partnerTwoName
     <div className="p-6 max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="font-serif text-3xl font-bold text-foreground">Events</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">Events</h1>
           <p className="text-muted-foreground mt-1">
             {partnerOneName} &amp; {partnerTwoName} — all functions and celebrations
           </p>

@@ -115,12 +115,12 @@ export default function LegalPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="font-serif text-3xl font-bold">Legal & Admin</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold">Legal & Admin</h1>
           <p className="text-muted-foreground mt-1">Marriage license, name changes, and documents</p>
         </div>
-        <Button onClick={handleSave} disabled={loading}>
+        <Button onClick={handleSave} disabled={loading} className="sm:shrink-0">
           {loading ? "Saving..." : "Save All"}
         </Button>
       </div>
@@ -133,7 +133,7 @@ export default function LegalPage() {
             Marriage License
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>State / Jurisdiction</Label>
             <Input
@@ -191,7 +191,7 @@ export default function LegalPage() {
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label>Status</Label>
-            <div className="flex gap-3">
+            <div className="flex flex-wrap gap-2">
               {["none", "considering", "in_progress", "signed"].map((status) => (
                 <button
                   key={status}

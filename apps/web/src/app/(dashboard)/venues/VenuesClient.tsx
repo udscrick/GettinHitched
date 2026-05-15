@@ -443,7 +443,7 @@ export function VenuesClient({ eventId, venues: initialVenues, role }: Props) {
           <div className="py-4">
             {/* ── DETAILS TAB ── */}
             {activeTab === "basics" && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="col-span-2 space-y-2">
                   <Label>Venue Name *</Label>
                   <Input value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="The Grand Ballroom" />
@@ -559,13 +559,13 @@ export function VenuesClient({ eventId, venues: initialVenues, role }: Props) {
 
                   {costItems.length > 0 && (
                     <div className="space-y-2">
-                      <div className="grid grid-cols-[1fr_160px_32px] gap-2 px-1">
+                      <div className="grid grid-cols-[1fr_100px_32px] sm:grid-cols-[1fr_160px_32px] gap-2 px-1">
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Description</p>
                         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Amount ({currency})</p>
                         <span />
                       </div>
                       {costItems.map(item => (
-                        <div key={item.id} className="grid grid-cols-[1fr_160px_32px] gap-2 items-center">
+                        <div key={item.id} className="grid grid-cols-[1fr_100px_32px] sm:grid-cols-[1fr_160px_32px] gap-2 items-center">
                           <Input
                             value={item.label}
                             onChange={e => updateCostItem(item.id, "label", e.target.value)}
@@ -601,7 +601,7 @@ export function VenuesClient({ eventId, venues: initialVenues, role }: Props) {
                 {/* Deposit */}
                 <div className="border-t pt-4 space-y-3">
                   <p className="text-sm font-medium">Deposit</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label>Deposit Amount ({currency})</Label>
                       <Input
@@ -627,7 +627,7 @@ export function VenuesClient({ eventId, venues: initialVenues, role }: Props) {
                 {/* Dates */}
                 <div className="border-t pt-4 space-y-3">
                   <p className="text-sm font-medium">Dates</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label>Visit / Tour Date</Label>
                       <Input type="date" value={form.visitDate} onChange={e => setForm({ ...form, visitDate: e.target.value })} />

@@ -28,7 +28,7 @@ export default async function RegistryPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="font-serif text-3xl font-bold">Gift Registry</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold">Gift Registry</h1>
         <p className="text-muted-foreground mt-1">Manage your registry and track received gifts</p>
       </div>
       <RegistryClient

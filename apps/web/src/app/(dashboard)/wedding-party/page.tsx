@@ -24,7 +24,7 @@ export default async function WeddingPartyPage() {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
-        <h1 className="font-serif text-3xl font-bold">Wedding Party</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold">Wedding Party</h1>
         <p className="text-muted-foreground mt-1">
           Manage your wedding party members and their details
         </p>

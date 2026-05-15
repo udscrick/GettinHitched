@@ -452,7 +452,7 @@ export function VendorsClient({ eventId, vendors, role }: Props) {
               {editVendor ? "Edit Vendor" : "Add Vendor"}
             </DialogTitle>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-4">
             <div className="col-span-2 space-y-2">
               <Label>Vendor Name *</Label>
               <Input

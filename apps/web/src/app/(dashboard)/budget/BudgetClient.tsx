@@ -187,7 +187,7 @@ export function BudgetClient({
         <Input {...register("title")} placeholder="e.g. Venue deposit" className="mt-1" />
         {errors.title && <p className="text-xs text-destructive mt-1">{errors.title.message}</p>}
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <Label>Amount</Label>
           <div className="relative mt-1">
@@ -209,7 +209,7 @@ export function BudgetClient({
           </Select>
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <div className="flex items-center justify-between">
             <Label>Category</Label>
@@ -247,7 +247,7 @@ export function BudgetClient({
           <Input {...register("vendorName")} placeholder="e.g. Taj Caterers" className="mt-1" />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <Label>Paid By</Label>
           <Input {...register("paidBy")} placeholder="e.g. Bride's family" className="mt-1" />

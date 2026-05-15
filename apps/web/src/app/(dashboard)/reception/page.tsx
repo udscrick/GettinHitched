@@ -156,7 +156,7 @@ export default function ReceptionPage() {
   if (initialLoad) {
     return (
       <div className="space-y-6 animate-fade-in">
-        <h1 className="font-serif text-3xl font-bold">Reception Planning</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold">Reception Planning</h1>
         <div className="text-muted-foreground">Loading...</div>
       </div>
     )
@@ -164,12 +164,12 @@ export default function ReceptionPage() {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="font-serif text-3xl font-bold">Reception Planning</h1>
+          <h1 className="font-serif text-2xl sm:text-3xl font-bold">Reception Planning</h1>
           <p className="text-muted-foreground mt-1">Plan your perfect reception celebration</p>
         </div>
-        <Button onClick={handleSave} disabled={loading}>
+        <Button onClick={handleSave} disabled={loading} className="sm:shrink-0">
           {loading ? "Saving..." : "Save All"}
         </Button>
       </div>
@@ -201,7 +201,7 @@ export default function ReceptionPage() {
           <CardHeader>
             <CardTitle className="font-serif text-xl">Reception Details</CardTitle>
           </CardHeader>
-          <CardContent className="grid grid-cols-2 gap-4">
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="col-span-2 space-y-2">
               <Label>Venue / Location</Label>
               <Input
@@ -274,7 +274,7 @@ export default function ReceptionPage() {
                   <GripVertical className="h-4 w-4" />
                   <span className="text-xs font-mono w-4">{index + 1}</span>
                 </div>
-                <div className="flex-1 grid grid-cols-4 gap-2">
+                <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <Input
                     value={event.time}
                     onChange={(e) =>
@@ -373,7 +373,7 @@ export default function ReceptionPage() {
             <CardTitle className="font-serif text-xl">Music & Dancing</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>First Dance Song</Label>
                 <Input

@@ -136,7 +136,7 @@ export default function SettingsPage() {
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <h1 className="font-serif text-3xl font-bold">Settings</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold">Settings</h1>
         <p className="text-muted-foreground mt-1">Manage your wedding details and collaborators</p>
       </div>
 
@@ -148,7 +148,7 @@ export default function SettingsPage() {
             Wedding Details
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
+        <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Partner 1 Name</Label>
             <Input

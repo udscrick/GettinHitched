@@ -71,7 +71,7 @@ export default async function ReportsPage() {
   return (
     <div className="space-y-8 animate-fade-in">
       <div>
-        <h1 className="font-serif text-3xl font-bold">Reports & Analytics</h1>
+        <h1 className="font-serif text-2xl sm:text-3xl font-bold">Reports & Analytics</h1>
         <p className="text-muted-foreground mt-1">Overview of your wedding planning progress</p>
       </div>
 
@@ -192,7 +192,7 @@ export default async function ReportsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
               { label: "Total Budget", value: formatCurrency(totalBudget, wedding.currency) },
               { label: "Estimated Total", value: formatCurrency(totalEstimated, wedding.currency) },
@@ -231,7 +231,7 @@ export default async function ReportsPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-6 mb-4">
+          <div className="grid grid-cols-3 gap-3 mb-4">
             {[
               { label: "Completed", value: completedTasks, color: "text-green-600" },
               { label: "Overdue", value: overdueTasks, color: "text-red-600" },
