@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useWedding } from "@/contexts/WeddingContext"
 import { toast } from "sonner"
 import {
   createPartyMember,
@@ -114,6 +115,9 @@ const defaultForm = {
 
 export function WeddingPartyClient({ weddingId, members, role }: Props) {
   const router = useRouter()
+  const { wedding } = useWedding()
+  const p1 = wedding?.partnerOneName ?? "Partner 1"
+  const p2 = wedding?.partnerTwoName ?? "Partner 2"
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [editMember, setEditMember] = useState<Member | null>(null)
@@ -323,7 +327,7 @@ export function WeddingPartyClient({ weddingId, members, role }: Props) {
           {partnerOneSide.length > 0 && (
             <div className="space-y-3">
               <h2 className="font-serif text-xl font-semibold text-blue-700">
-                Bridal Party / Partner 1&apos;s Side
+                {p1}&apos;s Side
               </h2>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {partnerOneSide.map(renderMemberCard)}
@@ -334,7 +338,7 @@ export function WeddingPartyClient({ weddingId, members, role }: Props) {
           {partnerTwoSide.length > 0 && (
             <div className="space-y-3">
               <h2 className="font-serif text-xl font-semibold text-pink-700">
-                Groom&apos;s Party / Partner 2&apos;s Side
+                {p2}&apos;s Side
               </h2>
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {partnerTwoSide.map(renderMemberCard)}
@@ -388,8 +392,8 @@ export function WeddingPartyClient({ weddingId, members, role }: Props) {
               <Select value={form.side} onValueChange={(v) => setForm({ ...form, side: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PARTNER_ONE">Partner 1&apos;s Side</SelectItem>
-                  <SelectItem value="PARTNER_TWO">Partner 2&apos;s Side</SelectItem>
+                  <SelectItem value="PARTNER_ONE">{p1}&apos;s Side</SelectItem>
+                  <SelectItem value="PARTNER_TWO">{p2}&apos;s Side</SelectItem>
                   <SelectItem value="BOTH">Both / Family</SelectItem>
                 </SelectContent>
               </Select>

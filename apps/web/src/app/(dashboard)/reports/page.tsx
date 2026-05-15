@@ -24,10 +24,10 @@ export default async function ReportsPage() {
   const [guests, expenses, categories, tasks] = await Promise.all([
     db.guest.findMany({ where: { eventId: { in: eventIds } } }),
     db.expense.findMany({
-      where: { category: { eventId: { in: eventIds } } },
+      where: { eventId: { in: eventIds } },
       include: { category: true },
     }),
-    db.expenseCategory.findMany({ where: { eventId: { in: eventIds } } }),
+    db.expenseCategory.findMany({ where: { weddingId } }),
     db.task.findMany({ where: { eventId: { in: eventIds } } }),
   ])
 
@@ -44,17 +44,19 @@ export default async function ReportsPage() {
     mutual: guests.filter((g) => g.side === "BOTH").length,
   }
 
-  // Budget analytics — totalBudget = sum of all category budgets across events
-  const totalBudget = categories.reduce((sum, c) => sum + parseFloat(c.budgetAmount ?? "0"), 0)
-  const totalSpent = expenses.reduce((sum, e) => sum + parseFloat(e.totalAmount ?? "0"), 0)
+  // Budget analytics
+  const totalBudget = parseFloat(wedding.totalBudget ?? "0")
+  const totalSpent = expenses.reduce((sum, e) => sum + parseFloat(e.amount ?? "0"), 0)
   const totalEstimated = totalSpent
-  const totalPaid = expenses.reduce((sum, e) => sum + parseFloat(e.paidAmount ?? "0"), 0)
+  const totalPaid = expenses
+    .filter((e) => e.paymentStatus === "PAID")
+    .reduce((sum, e) => sum + parseFloat(e.amount ?? "0"), 0)
   const remaining = totalBudget - totalSpent
 
   const byCategory = categories
     .map((cat) => {
       const catExpenses = expenses.filter((e) => e.categoryId === cat.id)
-      const spent = catExpenses.reduce((sum, e) => sum + parseFloat(e.totalAmount ?? "0"), 0)
+      const spent = catExpenses.reduce((sum, e) => sum + parseFloat(e.amount ?? "0"), 0)
       return { name: cat.name, spent, count: catExpenses.length, color: cat.color }
     })
     .filter((c) => c.count > 0)
@@ -77,9 +79,9 @@ export default async function ReportsPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
           { label: "Total Guests", value: totalGuests, sub: `${confirmed} confirmed`, icon: Users, color: "text-blue-600" },
-          { label: "Budget Used", value: `${totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0}%`, sub: formatCurrency(totalSpent) + " spent", icon: DollarSign, color: "text-green-600" },
+          { label: "Budget Used", value: `${totalBudget > 0 ? Math.round((totalSpent / totalBudget) * 100) : 0}%`, sub: formatCurrency(totalSpent, wedding.currency) + " spent", icon: DollarSign, color: "text-green-600" },
           { label: "Tasks Done", value: `${tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0}%`, sub: `${completedTasks} / ${tasks.length}`, icon: CheckSquare, color: "text-purple-600" },
-          { label: "Budget Left", value: formatCurrency(remaining), sub: remaining >= 0 ? "on track" : "over budget", icon: TrendingUp, color: remaining >= 0 ? "text-green-600" : "text-red-600" },
+          { label: "Budget Left", value: formatCurrency(remaining, wedding.currency), sub: remaining >= 0 ? "on track" : "over budget", icon: TrendingUp, color: remaining >= 0 ? "text-green-600" : "text-red-600" },
         ].map(({ label, value, sub, icon: Icon, color }) => (
           <Card key={label}>
             <CardContent className="p-4">
@@ -163,7 +165,7 @@ export default async function ReportsPage() {
                 <div key={name} className="space-y-1">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium">{name}</span>
-                    <span className="text-muted-foreground">{formatCurrency(spent)}</span>
+                    <span className="text-muted-foreground">{formatCurrency(spent, wedding.currency)}</span>
                   </div>
                   <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                     <div
@@ -192,10 +194,10 @@ export default async function ReportsPage() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { label: "Total Budget", value: formatCurrency(totalBudget) },
-              { label: "Estimated Total", value: formatCurrency(totalEstimated) },
-              { label: "Actual Spent", value: formatCurrency(totalSpent) },
-              { label: "Amount Paid", value: formatCurrency(totalPaid) },
+              { label: "Total Budget", value: formatCurrency(totalBudget, wedding.currency) },
+              { label: "Estimated Total", value: formatCurrency(totalEstimated, wedding.currency) },
+              { label: "Actual Spent", value: formatCurrency(totalSpent, wedding.currency) },
+              { label: "Amount Paid", value: formatCurrency(totalPaid, wedding.currency) },
             ].map(({ label, value }) => (
               <div key={label}>
                 <p className="text-sm text-muted-foreground">{label}</p>

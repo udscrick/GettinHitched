@@ -6,6 +6,7 @@ import { format } from "date-fns"
 import { Calendar, MapPin, Users, CheckSquare, ShoppingBag, DollarSign, Building2, ChevronRight } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { formatCurrency } from "@/lib/utils"
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
   ROKA: "Roka", ENGAGEMENT: "Engagement", MEHENDI: "Mehendi", HALDI: "Haldi",
@@ -24,18 +25,22 @@ export default async function EventOverviewPage({ params }: { params: { eventId:
       _count: { select: { guests: true, tasks: true, vendors: true, venues: true } },
       guests: { where: { rsvpStatus: "CONFIRMED" }, select: { id: true } },
       tasks: { where: { isCompleted: true }, select: { id: true } },
-      expenses: { select: { totalAmount: true, paidAmount: true } },
+      expenses: { select: { amount: true, paymentStatus: true } },
     },
   })
   if (!event) notFound()
 
   const member = await db.weddingMember.findFirst({
     where: { weddingId: event.weddingId, userId: session.user.id },
+    include: { wedding: { select: { currency: true } } },
   })
   if (!member) redirect("/events")
+  const currency = member.wedding.currency ?? "INR"
 
-  const totalBudget = event.expenses.reduce((s, e) => s + parseFloat(e.totalAmount || "0"), 0)
-  const totalPaid = event.expenses.reduce((s, e) => s + parseFloat(e.paidAmount || "0"), 0)
+  const totalBudget = event.expenses.reduce((s, e) => s + parseFloat(e.amount || "0"), 0)
+  const totalPaid = event.expenses
+    .filter((e) => e.paymentStatus === "PAID")
+    .reduce((s, e) => s + parseFloat(e.amount || "0"), 0)
   const confirmedGuests = event.guests.length
   const completedTasks = event.tasks.length
 
@@ -43,7 +48,7 @@ export default async function EventOverviewPage({ params }: { params: { eventId:
 
   const quickLinks = [
     { label: "Guests & RSVPs", href: `${base}/guests`, icon: Users, stat: `${event._count.guests} guests`, sub: `${confirmedGuests} confirmed` },
-    { label: "Budget & Expenses", href: `${base}/budget`, icon: DollarSign, stat: `₹${totalPaid.toLocaleString()} paid`, sub: `of ₹${totalBudget.toLocaleString()}` },
+    { label: "Budget & Expenses", href: `${base}/budget`, icon: DollarSign, stat: `${formatCurrency(totalPaid, currency)} paid`, sub: `of ${formatCurrency(totalBudget, currency)}` },
     { label: "Vendors", href: `${base}/vendors`, icon: ShoppingBag, stat: `${event._count.vendors} vendors`, sub: "booked & researching" },
     { label: "Venue", href: `${base}/venue`, icon: Building2, stat: `${event._count.venues} venues`, sub: "considered" },
     { label: "Tasks", href: `${base}/tasks`, icon: CheckSquare, stat: `${completedTasks}/${event._count.tasks}`, sub: "tasks completed" },

@@ -24,6 +24,8 @@ model User {
   weddingMembers  WeddingMember[]
   taskAssignments TaskAssignment[]
   notes           Note[]
+  expenseComments    ExpenseComment[]
+  expenseActivities  ExpenseActivity[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -78,6 +80,10 @@ model Wedding {
   city            String?
   state           String?
   country         String    @default("IN")
+  currency        String    @default("INR")
+  totalBudget     String?
+  weddingTime     String?
+  weddingLocation String?
   coverPhotoUrl   String?
   story           String?
 
@@ -87,11 +93,16 @@ model Wedding {
   websiteTitle    String?
   websiteMessage  String?
 
+  // Expense split config
+  splitEnabled    Boolean @default(false)
+  splitAgreement  String? // JSON: [{partyName, percentage}]
+
   members           WeddingMember[]
   invites           WeddingInvite[]
   events            Event[]
 
   // Project-level data (not per-event)
+  expenseCategories ExpenseCategory[]
   registryItems     RegistryItem[]
   giftsReceived     GiftReceived[]
   weddingParty      WeddingPartyMember[]
@@ -101,6 +112,7 @@ model Wedding {
   notes             Note[]
   announcements     Announcement[]
   websiteSections   WebsiteSection[]
+  expenseActivities ExpenseActivity[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -152,12 +164,12 @@ model Event {
   dresscode   String?
   notes       String?
   sortOrder   Int       @default(0)
+  eventBudget String?   // optional per-event budget
 
   wedding           Wedding           @relation(fields: [weddingId], references: [id], onDelete: Cascade)
   guests            Guest[]
   guestGroups       GuestGroup[]
   tables            Table[]
-  expenseCategories ExpenseCategory[]
   expenses          Expense[]
   vendors           Vendor[]
   venues            Venue[]
@@ -251,19 +263,19 @@ model Table {
 }
 
 // ─────────────────────────────────────────
-// BUDGET & EXPENSES (per event)
+// BUDGET & EXPENSES
 // ─────────────────────────────────────────
+// ExpenseCategory is now WEDDING-level (shared across all events)
 
 model ExpenseCategory {
   id           String @id @default(cuid())
-  eventId      String
+  weddingId    String
   name         String
-  budgetAmount String @default("0")
   color        String @default("#f9a8c9")
   icon         String?
   sortOrder    Int    @default(0)
 
-  event    Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  wedding  Wedding   @relation(fields: [weddingId], references: [id], onDelete: Cascade)
   expenses Expense[]
 
   createdAt DateTime @default(now())
@@ -271,27 +283,57 @@ model ExpenseCategory {
 }
 
 model Expense {
-  id          String    @id @default(cuid())
-  eventId     String
-  categoryId  String?
-  vendorId    String?
-  title       String
-  description String?
-  totalAmount String    @default("0")
-  paidAmount  String    @default("0")
-  dueDate     DateTime?
-  paidDate    DateTime?
-  status      String    @default("UNPAID")
-  isDeposit   Boolean   @default(false)
-  receiptUrl  String?
-  notes       String?
+  id            String    @id @default(cuid())
+  eventId       String
+  categoryId    String?
+  vendorId      String?
+  title         String
+  description   String?
+  amount        String    @default("0")   // total amount of this expense
+  currency      String    @default("INR") // INR | AED | USD
+  paidBy        String?                  // free-text payer name
+  expenseDate   DateTime?
+  paymentStatus String    @default("PENDING") // PAID | ADVANCE_GIVEN | PENDING
+  vendorName    String?   // free-text vendor (alternative to linked vendor)
+  receiptUrl    String?
+  notes         String?
 
   event    Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
   category ExpenseCategory? @relation(fields: [categoryId], references: [id])
   vendor   Vendor?          @relation(fields: [vendorId], references: [id])
+  comments ExpenseComment[]
+  activities ExpenseActivity[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model ExpenseComment {
+  id        String   @id @default(cuid())
+  expenseId String
+  userId    String
+  content   String
+
+  expense Expense @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ExpenseActivity {
+  id        String   @id @default(cuid())
+  weddingId String
+  expenseId String?
+  userId    String
+  action    String   // CREATED | UPDATED | DELETED
+  details   String?  // human-readable summary
+
+  wedding  Wedding  @relation(fields: [weddingId], references: [id], onDelete: Cascade)
+  expense  Expense? @relation(fields: [expenseId], references: [id], onDelete: SetNull)
+  user     User     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
 }
 
 // ─────────────────────────────────────────
@@ -373,6 +415,7 @@ model Venue {
   cons             String?
   photoUrls        String?
   contractUrl      String?
+  costItems        String?
   visitDate        DateTime?
   bookingDate      DateTime?
   depositPaid      Boolean   @default(false)

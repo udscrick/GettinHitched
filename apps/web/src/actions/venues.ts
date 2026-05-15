@@ -33,6 +33,13 @@ export async function createVenue(eventId: string, data: {
   pros?: string
   cons?: string
   rating?: number
+  costItems?: string
+  contractUrl?: string
+  photoUrls?: string
+  visitDate?: string
+  bookingDate?: string
+  depositPaid?: boolean
+  depositAmount?: string
 }) {
   const member = await getEventAccess(eventId)
   if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
@@ -60,6 +67,13 @@ export async function createVenue(eventId: string, data: {
       pros: data.pros,
       cons: data.cons,
       rating: data.rating,
+      costItems: data.costItems,
+      contractUrl: data.contractUrl,
+      photoUrls: data.photoUrls,
+      visitDate: data.visitDate ? new Date(data.visitDate) : undefined,
+      bookingDate: data.bookingDate ? new Date(data.bookingDate) : undefined,
+      depositPaid: data.depositPaid ?? false,
+      depositAmount: data.depositAmount,
     },
   })
   revalidatePath(`/events/${eventId}/venue`)
@@ -89,6 +103,9 @@ export async function updateVenue(venueId: string, eventId: string, data: Partia
   bookingDate: string
   depositPaid: boolean
   depositAmount: string
+  costItems: string
+  contractUrl: string
+  photoUrls: string
 }>) {
   const member = await getEventAccess(eventId)
   if (!member || member.role === "VIEWER") return { error: "Unauthorized" }

@@ -6,6 +6,7 @@ import { format, differenceInDays } from "date-fns"
 import { Calendar, Users, CheckSquare, DollarSign, ChevronRight, Plus, MapPin } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { formatCurrency } from "@/lib/utils"
 
 const EVENT_TYPE_COLORS: Record<string, string> = {
   ROKA: "bg-amber-100 text-amber-800",
@@ -46,7 +47,7 @@ export default async function DashboardPage() {
               _count: { select: { guests: true, tasks: true } },
               guests: { where: { rsvpStatus: "CONFIRMED" }, select: { id: true } },
               tasks: { where: { isCompleted: false }, select: { id: true } },
-              expenses: { select: { totalAmount: true, paidAmount: true } },
+              expenses: { select: { amount: true, paymentStatus: true } },
             },
           },
         },
@@ -60,7 +61,7 @@ export default async function DashboardPage() {
   const totalGuests = wedding.events.reduce((s, e) => s + e._count.guests, 0)
   const totalOpenTasks = wedding.events.reduce((s, e) => s + e._count.tasks, 0)
   const totalSpend = wedding.events.reduce((s, e) =>
-    s + e.expenses.reduce((es, ex) => es + parseFloat(ex.totalAmount || "0"), 0), 0)
+    s + e.expenses.reduce((es, ex) => es + parseFloat(ex.amount || "0"), 0), 0)
 
   const now = new Date()
   const upcoming = wedding.events
@@ -141,7 +142,7 @@ export default async function DashboardPage() {
               <div>
                 <p className="text-xs text-muted-foreground">Total Spend</p>
                 <p className="text-xl font-bold font-serif">
-                  ₹{totalSpend >= 100000 ? `${(totalSpend / 100000).toFixed(1)}L` : totalSpend.toLocaleString("en-IN")}
+                  {formatCurrency(totalSpend, wedding.currency ?? "INR")}
                 </p>
               </div>
             </div>
@@ -176,7 +177,7 @@ export default async function DashboardPage() {
           <div className="space-y-2">
             {wedding.events.map(event => {
               const openTasks = event.tasks.length
-              const totalPaid = event.expenses.reduce((s, e) => s + parseFloat(e.paidAmount || "0"), 0)
+              const totalPaid = event.expenses.filter(e => e.paymentStatus === "PAID").reduce((s, e) => s + parseFloat(e.amount || "0"), 0)
               return (
                 <Link key={event.id} href={`/events/${event.id}`}>
                   <Card className="hover:shadow-sm transition-shadow cursor-pointer">
@@ -205,7 +206,7 @@ export default async function DashboardPage() {
                       <div className="hidden sm:flex items-center gap-6 text-sm text-muted-foreground shrink-0">
                         <span>{event._count.guests} guests</span>
                         <span>{openTasks} open tasks</span>
-                        <span>₹{totalPaid.toLocaleString("en-IN")} paid</span>
+                        <span>{formatCurrency(totalPaid, wedding.currency ?? "INR")} paid</span>
                       </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
                     </CardContent>

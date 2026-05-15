@@ -15,6 +15,8 @@ export interface WeddingContextType {
     websiteEnabled: boolean
     websiteTheme: string
     story: string | null
+    currency: string
+    totalBudget: string | null
   } | null
   memberRole: string | null
 }

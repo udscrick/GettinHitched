@@ -52,9 +52,9 @@ export default function SettingsPage() {
     weddingLocation: "",
     city: "",
     state: "",
-    country: "US",
+    country: "IN",
     totalBudget: "",
-    currency: "USD",
+    currency: "INR",
   })
 
   useEffect(() => {
@@ -77,7 +77,7 @@ export default function SettingsPage() {
             state: w.state ?? "",
             country: w.country ?? "US",
             totalBudget: w.totalBudget ?? "",
-            currency: w.currency ?? "USD",
+            currency: w.currency ?? "INR",
           })
         }
       })
@@ -221,11 +221,18 @@ export default function SettingsPage() {
               onChange={(e) => setWedding({ ...wedding, currency: e.target.value })}
               className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
             >
-              <option value="USD">USD ($)</option>
-              <option value="EUR">EUR (€)</option>
-              <option value="GBP">GBP (£)</option>
-              <option value="CAD">CAD (CA$)</option>
-              <option value="AUD">AUD (A$)</option>
+              <option value="INR">INR (₹) — Indian Rupee</option>
+              <option value="USD">USD ($) — US Dollar</option>
+              <option value="EUR">EUR (€) — Euro</option>
+              <option value="GBP">GBP (£) — British Pound</option>
+              <option value="AUD">AUD (A$) — Australian Dollar</option>
+              <option value="CAD">CAD (CA$) — Canadian Dollar</option>
+              <option value="SGD">SGD (S$) — Singapore Dollar</option>
+              <option value="AED">AED (د.إ) — UAE Dirham</option>
+              <option value="MYR">MYR (RM) — Malaysian Ringgit</option>
+              <option value="CHF">CHF (Fr) — Swiss Franc</option>
+              <option value="JPY">JPY (¥) — Japanese Yen</option>
+              <option value="THB">THB (฿) — Thai Baht</option>
             </select>
           </div>
           <div className="col-span-2 flex justify-end">

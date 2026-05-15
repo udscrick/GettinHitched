@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useWedding } from "@/contexts/WeddingContext"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -53,6 +54,9 @@ type CeremonyMusic = {
 
 export default function CeremonyPage() {
   const router = useRouter()
+  const { wedding } = useWedding()
+  const p1 = wedding?.partnerOneName ?? "Partner 1"
+  const p2 = wedding?.partnerTwoName ?? "Partner 2"
   const [activeTab, setActiveTab] = useState("details")
   const [loading, setLoading] = useState(false)
   const [initialLoad, setInitialLoad] = useState(true)
@@ -339,7 +343,7 @@ export default function CeremonyPage() {
         <div className="grid md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle className="font-serif text-xl">Partner 1&apos;s Vows</CardTitle>
+              <CardTitle className="font-serif text-xl">{p1}&apos;s Vows</CardTitle>
             </CardHeader>
             <CardContent>
               <Textarea
@@ -353,7 +357,7 @@ export default function CeremonyPage() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle className="font-serif text-xl">Partner 2&apos;s Vows</CardTitle>
+              <CardTitle className="font-serif text-xl">{p2}&apos;s Vows</CardTitle>
             </CardHeader>
             <CardContent>
               <Textarea

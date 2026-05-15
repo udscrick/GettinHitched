@@ -10,14 +10,15 @@ async function getEventAccess(eventId: string) {
   if (!session?.user?.id) return null
   const event = await db.event.findUnique({ where: { id: eventId } })
   if (!event) return null
-  return db.weddingMember.findFirst({
+  const member = await db.weddingMember.findFirst({
     where: { weddingId: event.weddingId, userId: session.user.id },
   })
+  return member ? { member, weddingId: event.weddingId } : null
 }
 
 export async function createExpense(eventId: string, data: unknown) {
-  const member = await getEventAccess(eventId)
-  if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
+  const access = await getEventAccess(eventId)
+  if (!access || access.member.role === "VIEWER") return { error: "Unauthorized" }
 
   const parsed = expenseSchema.safeParse(data)
   if (!parsed.success) return { error: parsed.error.errors[0].message }
@@ -29,16 +30,14 @@ export async function createExpense(eventId: string, data: unknown) {
       title: d.title,
       description: d.description,
       categoryId: d.categoryId,
-      vendorId: d.vendorId,
-      totalAmount: d.totalAmount,
-      paidAmount: d.paidAmount,
-      dueDate: d.dueDate ? new Date(d.dueDate) : null,
-      paidDate: d.paidDate ? new Date(d.paidDate) : null,
-      status: d.status,
-      isDeposit: d.isDeposit,
+      vendorName: d.vendorName,
+      amount: d.amount,
+      expenseDate: d.expenseDate ? new Date(d.expenseDate) : null,
+      paymentStatus: d.paymentStatus,
+      paidBy: d.paidBy,
       notes: d.notes,
     },
-    include: { category: true, vendor: true },
+    include: { category: true },
   })
 
   revalidatePath(`/events/${eventId}/budget`)
@@ -46,8 +45,8 @@ export async function createExpense(eventId: string, data: unknown) {
 }
 
 export async function updateExpense(expenseId: string, eventId: string, data: unknown) {
-  const member = await getEventAccess(eventId)
-  if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
+  const access = await getEventAccess(eventId)
+  if (!access || access.member.role === "VIEWER") return { error: "Unauthorized" }
 
   const parsed = expenseSchema.partial().safeParse(data)
   if (!parsed.success) return { error: parsed.error.errors[0].message }
@@ -56,9 +55,17 @@ export async function updateExpense(expenseId: string, eventId: string, data: un
   const expense = await db.expense.update({
     where: { id: expenseId },
     data: {
-      ...d,
-      dueDate: d.dueDate !== undefined ? (d.dueDate ? new Date(d.dueDate) : null) : undefined,
-      paidDate: d.paidDate !== undefined ? (d.paidDate ? new Date(d.paidDate) : null) : undefined,
+      ...(d.title !== undefined && { title: d.title }),
+      ...(d.description !== undefined && { description: d.description }),
+      ...(d.categoryId !== undefined && { categoryId: d.categoryId }),
+      ...(d.vendorName !== undefined && { vendorName: d.vendorName }),
+      ...(d.amount !== undefined && { amount: d.amount }),
+      ...(d.paymentStatus !== undefined && { paymentStatus: d.paymentStatus }),
+      ...(d.paidBy !== undefined && { paidBy: d.paidBy }),
+      ...(d.notes !== undefined && { notes: d.notes }),
+      ...(d.expenseDate !== undefined && {
+        expenseDate: d.expenseDate ? new Date(d.expenseDate) : null,
+      }),
     },
   })
 
@@ -67,8 +74,8 @@ export async function updateExpense(expenseId: string, eventId: string, data: un
 }
 
 export async function deleteExpense(expenseId: string, eventId: string) {
-  const member = await getEventAccess(eventId)
-  if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
+  const access = await getEventAccess(eventId)
+  if (!access || access.member.role === "VIEWER") return { error: "Unauthorized" }
 
   await db.expense.delete({ where: { id: expenseId } })
   revalidatePath(`/events/${eventId}/budget`)
@@ -76,14 +83,14 @@ export async function deleteExpense(expenseId: string, eventId: string) {
 }
 
 export async function createCategory(eventId: string, data: unknown) {
-  const member = await getEventAccess(eventId)
-  if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
+  const access = await getEventAccess(eventId)
+  if (!access || access.member.role === "VIEWER") return { error: "Unauthorized" }
 
   const parsed = categorySchema.safeParse(data)
   if (!parsed.success) return { error: parsed.error.errors[0].message }
 
   const category = await db.expenseCategory.create({
-    data: { eventId, ...parsed.data },
+    data: { weddingId: access.weddingId, ...parsed.data },
   })
 
   revalidatePath(`/events/${eventId}/budget`)
@@ -91,8 +98,8 @@ export async function createCategory(eventId: string, data: unknown) {
 }
 
 export async function updateCategory(categoryId: string, eventId: string, data: unknown) {
-  const member = await getEventAccess(eventId)
-  if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
+  const access = await getEventAccess(eventId)
+  if (!access || access.member.role === "VIEWER") return { error: "Unauthorized" }
 
   const parsed = categorySchema.partial().safeParse(data)
   if (!parsed.success) return { error: parsed.error.errors[0].message }
@@ -106,8 +113,8 @@ export async function updateCategory(categoryId: string, eventId: string, data: 
 }
 
 export async function deleteCategory(categoryId: string, eventId: string) {
-  const member = await getEventAccess(eventId)
-  if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
+  const access = await getEventAccess(eventId)
+  if (!access || access.member.role === "VIEWER") return { error: "Unauthorized" }
 
   await db.expenseCategory.delete({ where: { id: categoryId } })
   revalidatePath(`/events/${eventId}/budget`)

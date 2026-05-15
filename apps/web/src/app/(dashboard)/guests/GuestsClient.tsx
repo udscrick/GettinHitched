@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useWedding } from "@/contexts/WeddingContext"
 import { toast } from "sonner"
 import {
   createGuest,
@@ -81,10 +82,13 @@ const sideColors: Record<string, string> = {
   BOTH: "bg-purple-100 text-purple-800 border-purple-200",
 }
 
-const sideLabels: Record<string, string> = {
-  PARTNER_ONE: "Partner 1",
-  PARTNER_TWO: "Partner 2",
-  BOTH: "Both",
+function useSideLabels(): Record<string, string> {
+  const { wedding } = useWedding()
+  return {
+    PARTNER_ONE: wedding?.partnerOneName ?? "Partner 1",
+    PARTNER_TWO: wedding?.partnerTwoName ?? "Partner 2",
+    BOTH: "Both",
+  }
 }
 
 const defaultForm = {
@@ -103,6 +107,7 @@ const defaultForm = {
 
 export function GuestsClient({ eventId, guests, tables, role }: Props) {
   const router = useRouter()
+  const sideLabels = useSideLabels()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [editGuest, setEditGuest] = useState<Guest | null>(null)
@@ -222,8 +227,8 @@ export function GuestsClient({ eventId, guests, tables, role }: Props) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">All Sides</SelectItem>
-              <SelectItem value="PARTNER_ONE">Partner 1</SelectItem>
-              <SelectItem value="PARTNER_TWO">Partner 2</SelectItem>
+              <SelectItem value="PARTNER_ONE">{sideLabels.PARTNER_ONE}</SelectItem>
+              <SelectItem value="PARTNER_TWO">{sideLabels.PARTNER_TWO}</SelectItem>
               <SelectItem value="BOTH">Both</SelectItem>
             </SelectContent>
           </Select>
@@ -406,8 +411,8 @@ export function GuestsClient({ eventId, guests, tables, role }: Props) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="PARTNER_ONE">Partner 1&apos;s Side</SelectItem>
-                  <SelectItem value="PARTNER_TWO">Partner 2&apos;s Side</SelectItem>
+                  <SelectItem value="PARTNER_ONE">{sideLabels.PARTNER_ONE}&apos;s Side</SelectItem>
+                  <SelectItem value="PARTNER_TWO">{sideLabels.PARTNER_TWO}&apos;s Side</SelectItem>
                   <SelectItem value="BOTH">Both / Mutual</SelectItem>
                 </SelectContent>
               </Select>

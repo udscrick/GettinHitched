@@ -21,7 +21,7 @@ export async function GET(req: Request, { params }: { params: { eventId: string 
 
     const [categories, expenses] = await Promise.all([
       db.expenseCategory.findMany({
-        where: { eventId: params.eventId },
+        where: { weddingId: access.event.weddingId },
         orderBy: { sortOrder: "asc" },
       }),
       db.expense.findMany({
@@ -52,9 +52,8 @@ export async function POST(req: Request, { params }: { params: { eventId: string
     if (body.type === "category") {
       const category = await db.expenseCategory.create({
         data: {
-          eventId: params.eventId,
+          weddingId: access.event.weddingId,
           name: body.name,
-          budgetAmount: body.budgetAmount ?? "0",
           color: body.color ?? "#f9a8c9",
           icon: body.icon,
         },
@@ -69,10 +68,10 @@ export async function POST(req: Request, { params }: { params: { eventId: string
         description: body.description,
         categoryId: body.categoryId,
         vendorId: body.vendorId,
-        totalAmount: body.totalAmount ?? "0",
-        paidAmount: body.paidAmount ?? "0",
-        status: body.status ?? "UNPAID",
-        dueDate: body.dueDate ? new Date(body.dueDate) : null,
+        amount: body.amount ?? "0",
+        paymentStatus: body.paymentStatus ?? "PENDING",
+        paidBy: body.paidBy ?? null,
+        expenseDate: body.expenseDate ? new Date(body.expenseDate) : null,
         notes: body.notes,
       },
       include: { category: true },
@@ -103,7 +102,6 @@ export async function PUT(req: Request, { params }: { params: { eventId: string 
         where: { id },
         data: {
           ...(data.name !== undefined && { name: data.name }),
-          ...(data.budgetAmount !== undefined && { budgetAmount: data.budgetAmount }),
           ...(data.color !== undefined && { color: data.color }),
         },
       })
@@ -114,12 +112,14 @@ export async function PUT(req: Request, { params }: { params: { eventId: string 
       where: { id },
       data: {
         ...(data.title !== undefined && { title: data.title }),
-        ...(data.totalAmount !== undefined && { totalAmount: data.totalAmount }),
-        ...(data.paidAmount !== undefined && { paidAmount: data.paidAmount }),
-        ...(data.status !== undefined && { status: data.status }),
+        ...(data.amount !== undefined && { amount: data.amount }),
+        ...(data.paymentStatus !== undefined && { paymentStatus: data.paymentStatus }),
+        ...(data.paidBy !== undefined && { paidBy: data.paidBy }),
         ...(data.categoryId !== undefined && { categoryId: data.categoryId }),
         ...(data.notes !== undefined && { notes: data.notes }),
-        ...(data.dueDate !== undefined && { dueDate: data.dueDate ? new Date(data.dueDate) : null }),
+        ...(data.expenseDate !== undefined && {
+          expenseDate: data.expenseDate ? new Date(data.expenseDate) : null,
+        }),
       },
     })
 

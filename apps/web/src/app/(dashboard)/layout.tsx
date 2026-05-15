@@ -40,6 +40,8 @@ export default async function DashboardLayout({
           websiteEnabled: wedding.websiteEnabled,
           websiteTheme: wedding.websiteTheme,
           story: wedding.story,
+          currency: wedding.currency ?? "INR",
+          totalBudget: wedding.totalBudget ?? null,
         },
         memberRole: role,
       }}

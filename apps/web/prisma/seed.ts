@@ -3,20 +3,20 @@ import { PrismaClient } from "@prisma/client"
 const prisma = new PrismaClient()
 
 const DEFAULT_CATEGORIES = [
-  { name: "Venue", color: "#C9A96E", icon: "🏛️", sortOrder: 0, budgetAmount: "0" },
-  { name: "Catering & Bar", color: "#E8B4B8", icon: "🍽️", sortOrder: 1, budgetAmount: "0" },
-  { name: "Photography", color: "#8fad8f", icon: "📷", sortOrder: 2, budgetAmount: "0" },
-  { name: "Videography", color: "#a6bda6", icon: "🎥", sortOrder: 3, budgetAmount: "0" },
-  { name: "Flowers & Florals", color: "#f9a8c9", icon: "💐", sortOrder: 4, budgetAmount: "0" },
-  { name: "Music & Entertainment", color: "#7a9b7a", icon: "🎵", sortOrder: 5, budgetAmount: "0" },
-  { name: "Attire & Accessories", color: "#D4B896", icon: "👗", sortOrder: 6, budgetAmount: "0" },
-  { name: "Hair & Makeup", color: "#ff93ae", icon: "💄", sortOrder: 7, budgetAmount: "0" },
-  { name: "Cake & Desserts", color: "#f7e7ce", icon: "🎂", sortOrder: 8, budgetAmount: "0" },
-  { name: "Invitations & Stationery", color: "#ccdacc", icon: "✉️", sortOrder: 9, budgetAmount: "0" },
-  { name: "Transportation", color: "#a6bda6", icon: "🚗", sortOrder: 10, budgetAmount: "0" },
-  { name: "Jewelry & Rings", color: "#C9A96E", icon: "💍", sortOrder: 11, budgetAmount: "0" },
-  { name: "Honeymoon", color: "#7a9b7a", icon: "✈️", sortOrder: 12, budgetAmount: "0" },
-  { name: "Miscellaneous", color: "#8B7355", icon: "📦", sortOrder: 13, budgetAmount: "0" },
+  { name: "Venue", color: "#C9A96E", icon: "🏛️", sortOrder: 0 },
+  { name: "Catering & Bar", color: "#E8B4B8", icon: "🍽️", sortOrder: 1 },
+  { name: "Photography", color: "#8fad8f", icon: "📷", sortOrder: 2 },
+  { name: "Videography", color: "#a6bda6", icon: "🎥", sortOrder: 3 },
+  { name: "Flowers & Florals", color: "#f9a8c9", icon: "💐", sortOrder: 4 },
+  { name: "Music & Entertainment", color: "#7a9b7a", icon: "🎵", sortOrder: 5 },
+  { name: "Attire & Accessories", color: "#D4B896", icon: "👗", sortOrder: 6 },
+  { name: "Hair & Makeup", color: "#ff93ae", icon: "💄", sortOrder: 7 },
+  { name: "Cake & Desserts", color: "#f7e7ce", icon: "🎂", sortOrder: 8 },
+  { name: "Invitations & Stationery", color: "#ccdacc", icon: "✉️", sortOrder: 9 },
+  { name: "Transportation", color: "#a6bda6", icon: "🚗", sortOrder: 10 },
+  { name: "Jewelry & Rings", color: "#C9A96E", icon: "💍", sortOrder: 11 },
+  { name: "Honeymoon", color: "#7a9b7a", icon: "✈️", sortOrder: 12 },
+  { name: "Miscellaneous", color: "#8B7355", icon: "📦", sortOrder: 13 },
 ]
 
 const DEFAULT_TASKS = [
@@ -134,10 +134,10 @@ export async function seedWedding(weddingId: string) {
   })
   const eventId = event.id
 
-  // Create default expense categories
+  // Create default expense categories (wedding-level, not event-level)
   for (const cat of DEFAULT_CATEGORIES) {
     await prisma.expenseCategory.create({
-      data: { eventId, ...cat },
+      data: { weddingId, ...cat },
     })
   }
 

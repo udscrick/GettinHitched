@@ -4,14 +4,7 @@ import { redirect, notFound } from "next/navigation"
 import { BudgetClient } from "@/app/(dashboard)/budget/BudgetClient"
 import { Card, CardContent } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-
-function parseAmount(v: string | null | undefined) {
-  return parseFloat(v ?? "0") || 0
-}
-
-function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(n)
-}
+import { formatCurrency, parseAmount } from "@/lib/utils"
 
 export default async function EventBudgetPage({ params }: { params: { eventId: string } }) {
   const session = await auth()
@@ -20,24 +13,31 @@ export default async function EventBudgetPage({ params }: { params: { eventId: s
   const event = await db.event.findUnique({
     where: { id: params.eventId },
     include: {
-      expenseCategories: { orderBy: { sortOrder: "asc" } },
       expenses: {
-        include: { category: true, vendor: true },
+        include: { category: true },
         orderBy: { createdAt: "desc" },
       },
-      vendors: { select: { id: true, name: true, type: true } },
     },
   })
   if (!event) notFound()
 
   const member = await db.weddingMember.findFirst({
     where: { weddingId: event.weddingId, userId: session.user.id },
+    include: { wedding: { select: { currency: true } } },
   })
   if (!member) redirect("/events")
+  const currency = member.wedding.currency ?? "INR"
 
-  const totalBudget = event.expenseCategories.reduce((s, c) => s + parseAmount(c.budgetAmount), 0)
-  const totalEstimated = event.expenses.reduce((s, e) => s + parseAmount(e.totalAmount), 0)
-  const totalPaid = event.expenses.reduce((s, e) => s + parseAmount(e.paidAmount), 0)
+  const categories = await db.expenseCategory.findMany({
+    where: { weddingId: event.weddingId },
+    orderBy: { sortOrder: "asc" },
+  })
+
+  const totalBudget = parseAmount(event.eventBudget)
+  const totalEstimated = event.expenses.reduce((s, e) => s + parseAmount(e.amount), 0)
+  const totalPaid = event.expenses
+    .filter((e) => e.paymentStatus === "PAID")
+    .reduce((s, e) => s + parseAmount(e.amount), 0)
   const budgetUsedPct = totalBudget > 0 ? Math.min((totalEstimated / totalBudget) * 100, 100) : 0
 
   return (
@@ -50,26 +50,30 @@ export default async function EventBudgetPage({ params }: { params: { eventId: s
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Total Budget</p>
-            <p className="text-2xl font-bold font-serif mt-1">{formatCurrency(totalBudget)}</p>
+            <p className="text-sm text-muted-foreground">Event Budget</p>
+            <p className="text-2xl font-bold font-serif mt-1">
+              {totalBudget > 0 ? formatCurrency(totalBudget, currency) : "—"}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground">Estimated Total</p>
-            <p className="text-2xl font-bold font-serif mt-1">{formatCurrency(totalEstimated)}</p>
+            <p className="text-2xl font-bold font-serif mt-1">{formatCurrency(totalEstimated, currency)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground">Total Paid</p>
-            <p className="text-2xl font-bold font-serif mt-1">{formatCurrency(totalPaid)}</p>
+            <p className="text-2xl font-bold font-serif mt-1">{formatCurrency(totalPaid, currency)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">Remaining Budget</p>
-            <p className="text-2xl font-bold font-serif mt-1">{formatCurrency(totalBudget - totalEstimated)}</p>
+            <p className="text-sm text-muted-foreground">Remaining</p>
+            <p className="text-2xl font-bold font-serif mt-1">
+              {totalBudget > 0 ? formatCurrency(totalBudget - totalEstimated, currency) : "—"}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -88,9 +92,8 @@ export default async function EventBudgetPage({ params }: { params: { eventId: s
 
       <BudgetClient
         eventId={params.eventId}
-        categories={event.expenseCategories}
+        categories={categories}
         expenses={event.expenses}
-        vendors={event.vendors}
         role={member.role}
       />
     </div>

@@ -16,6 +16,40 @@
 
 ---
 
+## 🎯 NEXT FEATURE: Comprehensive Expense Tracker
+
+> **Full spec lives in KI:** `/Users/uday/.gemini/antigravity/knowledge/expense-tracker/artifacts/expense-tracker-spec.md`
+> Read it in full before writing a single line of code.
+
+This is the most important feature of the entire application. Key constraints to memorise:
+
+1. **Two-level view:** Central (all events aggregated) at `/expenses` + per-event view at `/expenses/[eventId]`.
+2. **Budget is optional** — never require it; never show "remaining" language if no budget is set.
+3. **Categories are wedding-level** (not event-level) so they're shared across events. **Must migrate `ExpenseCategory.eventId → weddingId`.**
+4. **Payer is free text** — no separate Payer model. Field name: `paidBy String?` on `Expense`.
+5. **New Expense fields needed:** `paidBy`, `currency` (INR/AED/USD, default INR), `expenseDate`, `paymentStatus` (PAID/ADVANCE_GIVEN/PENDING).
+6. **New models needed:** `ExpenseActivity` (audit log), `ExpenseComment` (per-expense comments).
+7. **New Wedding fields:** `splitEnabled Boolean @default(false)`, `splitAgreement String?` (JSON).
+8. **New Event field:** `budget String?` (per-event optional budget).
+9. **Split is net settlement only** — never split individual expenses. Show a summary card when split is enabled.
+10. **Quick-add first** — only Title + Amount + Event are required. Everything else is optional.
+11. **Export:** PDF (jsPDF + jspdf-autotable) and CSV/Excel (papaparse + xlsx/SheetJS).
+12. **Mobile counterpart required** — update `apps/mobile/app/(tabs)/budget.tsx`.
+
+### New/Changed Routes
+- `/expenses` — central view (all events)
+- `/expenses/[eventId]` — per-event view
+- Nav entry: rename "Budget & Expenses" → "Expenses"
+
+### New Server Actions File
+`apps/web/src/actions/expenses.ts` — full CRUD + activity logging + split config + comments
+
+### Packages to install
+- `jspdf` + `jspdf-autotable` — PDF export
+- `xlsx` — Excel export (or use papaparse for CSV-only)
+
+---
+
 ## Project Overview
 
 **GettinHitched** is a full-stack wedding planning platform with a Next.js web app and an Expo React Native mobile app, living in a pnpm monorepo managed by Turborepo.
@@ -281,7 +315,7 @@ apps/web/src/app/
 
 ```
 Overview    → Dashboard
-Planning    → Timeline & Checklist | Budget & Expenses | Guests & RSVPs | Seating Chart
+Planning    → Timeline & Checklist | Expenses | Guests & RSVPs | Seating Chart
 Vendors     → Vendors | Venues
 The Wedding → Ceremony | Reception | Wedding Party
 Celebrations→ Engagement | Honeymoon
@@ -289,6 +323,8 @@ Creative    → Gallery & Inspiration | Invitations | Gift Registry
 Digital     → Wedding Website | Notes & Communications
 Admin       → Legal & Documents | Reports | Settings
 ```
+
+> "Budget & Expenses" renamed to **"Expenses"** pointing to `/expenses`.
 
 ### UI Components (`src/components/`)
 
@@ -317,8 +353,20 @@ Typography: serif headings (Georgia/Playfair-style via `font-serif`), sans-serif
 ### Dashboard (`/dashboard`)
 Server component. Shows: countdown to wedding, key stats (guest count, budget %, tasks done, days left), quick-action cards. Reads directly from `db`.
 
-### Budget & Expenses (`/budget`)
-Client component (`BudgetClient.tsx`). CRUD for `ExpenseCategory` + `Expense`. Recharts pie chart for category breakdown. Progress bars for paid vs. total. Server actions in `src/actions/budget.ts`.
+### Expenses (`/expenses`) — ⚠️ BEING REPLACED/EXPANDED
+Previously at `/budget` (`BudgetClient.tsx`). **Being rebuilt** as a comprehensive expense tracker.
+
+**New structure:**
+- `/expenses` — Central view aggregating all events. Components: `ExpenseTable`, `CategoryBreakdownCard`, `PayerBreakdownCard`, `BudgetProgressBar`, `SplitSummaryCard`, `ActivityLogFeed`, `ExportMenu`, `FilterBar`.
+- `/expenses/[eventId]` — Per-event view scoped to one event.
+- Server actions: `src/actions/expenses.ts` (new, replaces `budget.ts`).
+- Categories are now **wedding-level** (not event-level) — `ExpenseCategory.weddingId` instead of `eventId`.
+- New expense fields: `paidBy`, `currency`, `expenseDate`, `paymentStatus`.
+- New models: `ExpenseActivity`, `ExpenseComment`.
+- Split feature: toggle + net settlement card (when enabled).
+- Export: PDF (jsPDF) + CSV/Excel (papaparse/xlsx).
+
+See full spec: `/Users/uday/.gemini/antigravity/knowledge/expense-tracker/artifacts/expense-tracker-spec.md`
 
 ### Guests & RSVPs (`/guests`)
 `GuestsClient.tsx` — searchable, filterable guest table. RSVP tracking (PENDING / CONFIRMED / DECLINED). Import via CSV (papaparse). Guest groups. Notes, dietary, address, meal choice.
@@ -426,6 +474,7 @@ Key enums: `MemberRole` · `RSVPStatus` · `GuestSide` · `VendorType` · `Vendo
 - `apps/web/src/app/(dashboard)/layout.tsx` — minor type issue; investigate after badge fix.
 
 ### Not yet implemented / planned work
+- **🎯 Expense Tracker (IN PROGRESS — NEXT FEATURE)**: Full rebuild of `/budget` as comprehensive `/expenses`. See KI at `/Users/uday/.gemini/antigravity/knowledge/expense-tracker/`. Schema migrations, new server actions, two-level view, split feature, export, activity log, comments, and mobile counterpart all needed.
 - **Mobile ↔ Web API integration**: Mobile app currently has static placeholder data. Needs REST client (likely with `expo-secure-store` for JWT storage) wired to the Next.js API routes.
 - **Email sending**: Invitation send flow (`/api/invitations/[batchId]/send/route.ts`) has the structure but no email provider integrated (Resend / Nodemailer recommended).
 - **Real-time collaboration**: Multiple members editing simultaneously will overwrite each other. Consider optimistic locking or Pusher/Ably for live updates.
@@ -458,6 +507,10 @@ Key enums: `MemberRole` · `RSVPStatus` · `GuestSide` · `VendorType` · `Vendo
 | API routes | `apps/web/src/app/api/` |
 | UI components | `apps/web/src/components/ui/` |
 | Layout components | `apps/web/src/components/layout/` |
+| **Expense tracker actions (NEW)** | `apps/web/src/actions/expenses.ts` |
+| **Expense central view (NEW)** | `apps/web/src/app/(dashboard)/expenses/page.tsx` |
+| **Expense per-event view (NEW)** | `apps/web/src/app/(dashboard)/expenses/[eventId]/page.tsx` |
+| **Expense tracker KI spec** | `/Users/uday/.gemini/antigravity/knowledge/expense-tracker/artifacts/expense-tracker-spec.md` |
 
 ---
 
