@@ -21,14 +21,14 @@ export const NAV_SECTIONS = [
       { label: "Events", href: "/events", icon: Calendar },
     ],
   },
-  {
-    label: "Celebrations",
-    items: [
-      { label: "Engagement", href: "/engagement", icon: BookHeart },
-      { label: "Honeymoon", href: "/honeymoon", icon: Plane },
-      { label: "Wedding Party", href: "/wedding-party", icon: Sparkles },
-    ],
-  },
+  // {
+  //   label: "Celebrations",
+  //   items: [
+  //     { label: "Engagement", href: "/engagement", icon: BookHeart },
+  //     { label: "Honeymoon", href: "/honeymoon", icon: Plane },
+  //     { label: "Wedding Party", href: "/wedding-party", icon: Sparkles },
+  //   ],
+  // },
   {
     label: "Creative",
     items: [

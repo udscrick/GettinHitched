@@ -37,7 +37,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Users, Plus, MoreHorizontal, Pencil, Trash2, Search, Filter } from "lucide-react"
+import { Users, Plus, MoreHorizontal, Pencil, Trash2, Search, Filter, Rows3 } from "lucide-react"
+import { BulkAddDialog } from "./BulkAddDialog"
 
 interface Guest {
   id: string
@@ -109,6 +110,7 @@ export function GuestsClient({ eventId, guests, tables, role }: Props) {
   const router = useRouter()
   const sideLabels = useSideLabels()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [bulkOpen, setBulkOpen] = useState(false)
   const [deleteId, setDeleteId] = useState<string | null>(null)
   const [editGuest, setEditGuest] = useState<Guest | null>(null)
   const [form, setForm] = useState(defaultForm)
@@ -234,10 +236,16 @@ export function GuestsClient({ eventId, guests, tables, role }: Props) {
           </Select>
         </div>
         {canEdit && (
-          <Button onClick={openAdd} className="shrink-0">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Guest
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setBulkOpen(true)} className="shrink-0">
+              <Rows3 className="h-4 w-4 mr-2" />
+              Bulk Add
+            </Button>
+            <Button onClick={openAdd} className="shrink-0">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Guest
+            </Button>
+          </div>
         )}
       </div>
 
@@ -358,6 +366,14 @@ export function GuestsClient({ eventId, guests, tables, role }: Props) {
           </table>
         </div>
       )}
+
+      {/* Bulk Add Dialog */}
+      <BulkAddDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        eventId={eventId}
+        sideLabels={sideLabels}
+      />
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>

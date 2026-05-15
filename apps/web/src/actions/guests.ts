@@ -100,3 +100,24 @@ export async function deleteTable(tableId: string, eventId: string) {
   revalidatePath(`/events/${eventId}/guests/seating`)
   return { success: true }
 }
+
+export async function bulkCreateGuests(eventId: string, guests: unknown[]) {
+  const member = await getEventAccess(eventId)
+  if (!member || member.role === "VIEWER") return { error: "Unauthorized" }
+
+  let created = 0
+  const errors: string[] = []
+
+  for (const g of guests) {
+    const parsed = guestSchema.safeParse(g)
+    if (!parsed.success) {
+      errors.push(parsed.error.errors[0].message)
+      continue
+    }
+    await db.guest.create({ data: { eventId, ...parsed.data } })
+    created++
+  }
+
+  revalidatePath(`/events/${eventId}/guests`)
+  return { success: true, created, errors }
+}

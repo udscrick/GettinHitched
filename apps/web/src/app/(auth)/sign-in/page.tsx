@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -12,9 +12,11 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { signInSchema, type SignInInput } from "@/lib/validations/auth"
 import { Loader2 } from "lucide-react"
+import { Suspense } from "react"
 
-export default function SignInPage() {
-  const router = useRouter()
+function SignInForm() {
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard"
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
@@ -38,8 +40,7 @@ export default function SignInPage() {
         toast.error("Invalid email or password")
         return
       }
-      router.push("/dashboard")
-      router.refresh()
+      window.location.href = callbackUrl
     } catch {
       toast.error("Invalid email or password")
     } finally {
@@ -49,7 +50,7 @@ export default function SignInPage() {
 
   async function handleGoogleSignIn() {
     setGoogleLoading(true)
-    await signIn("google", { callbackUrl: "/dashboard" })
+    await signIn("google", { callbackUrl })
   }
 
   return (
@@ -125,5 +126,13 @@ export default function SignInPage() {
         </Link>
       </p>
     </div>
+  )
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense>
+      <SignInForm />
+    </Suspense>
   )
 }

@@ -51,10 +51,9 @@ function SignUpForm() {
       })
       if (result?.error) {
         toast.error("Account created! Please sign in.")
-        router.push("/sign-in")
+        router.push(`/sign-in?callbackUrl=${encodeURIComponent(callbackUrl)}`)
       } else {
-        router.push(callbackUrl)
-        router.refresh()
+        window.location.href = callbackUrl
       }
     } finally {
       setLoading(false)
@@ -148,7 +147,7 @@ function SignUpForm() {
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Already have an account?{" "}
-        <Link href="/sign-in" className="font-medium text-champagne-gold hover:underline">
+        <Link href={`/sign-in?callbackUrl=${encodeURIComponent(callbackUrl)}`} className="font-medium text-champagne-gold hover:underline">
           Sign in
         </Link>
       </p>
