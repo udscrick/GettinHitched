@@ -1,0 +1,21 @@
+{
+  "name": "gettinhitched",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "lint": "turbo run lint",
+    "type-check": "turbo run type-check",
+    "db:push": "cd apps/web && npx prisma db push",
+    "db:studio": "cd apps/web && npx prisma studio",
+    "db:seed": "cd apps/web && npx prisma db seed",
+    "db:generate": "cd apps/web && npx prisma generate"
+  },
+  "devDependencies": {
+    "turbo": "^1.13.4"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
